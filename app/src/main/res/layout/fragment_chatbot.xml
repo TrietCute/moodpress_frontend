@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5F5F5"
+    tools:context=".feature.chatbot.presentation.view.ChatbotFragment">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:elevation="4dp"
+        android:layout_marginTop="40dp"
+        app:title="Trợ lý cảm xúc"
+        app:titleCentered="true"
+        app:menu="@menu/menu_chatbot"
+        />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_chat"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="16dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:stackFromEnd="true" />
+    <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:background="@color/white"
+    android:gravity="bottom">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        app:boxCornerRadiusBottomEnd="24dp"
+        app:boxCornerRadiusBottomStart="24dp"
+        app:boxCornerRadiusTopEnd="24dp"
+        app:boxCornerRadiusTopStart="24dp"
+        app:boxStrokeWidth="0dp"
+        app:boxBackgroundColor="#F0F0F0"
+        android:hint="Nhập tin nhắn...">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edt_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textCapSentences|textMultiLine"
+            android:maxLines="4"
+            android:padding="12dp"
+            android:textSize="16sp"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btn_send"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:src="@drawable/ic_send"
+        app:fabSize="mini"
+        app:tint="@color/white"
+        app:backgroundTint="@color/colorPrimary"
+        app:elevation="2dp"
+        android:contentDescription="Gửi" />
+    </LinearLayout>
+</LinearLayout>

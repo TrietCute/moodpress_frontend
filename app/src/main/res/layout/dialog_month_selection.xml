@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="24dp"
+    android:background="@android:color/white">
+
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="24dp"
+        android:background="#E0E0E0"
+        style="@style/Widget.MaterialComponents.BottomSheet.Modal" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Chọn thời gian thống kê"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:gravity="center"
+        android:layout_marginBottom="24dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:layout_marginBottom="24dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_last_30_days"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="30 ngày qua"
+            android:layout_marginEnd="8dp"
+            app:cornerRadius="8dp"
+            app:strokeColor="#BDBDBD"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_this_month"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Tháng này"
+            android:layout_marginStart="8dp"
+            app:cornerRadius="8dp"
+            app:strokeColor="#BDBDBD"/>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#EEEEEE"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Hoặc chọn tháng cụ thể"
+        android:textSize="14sp"
+        android:textColor="#757575"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="24dp">
+
+        <NumberPicker
+            android:id="@+id/picker_month"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:descendantFocusability="blocksDescendants"/>
+
+        <NumberPicker
+            android:id="@+id/picker_year"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:descendantFocusability="blocksDescendants"/>
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_confirm_picker"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginHorizontal="16dp"
+        android:text="Xem thống kê"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:cornerRadius="12dp"/>
+
+</LinearLayout>

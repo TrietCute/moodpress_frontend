@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#F5F5F5">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView android:text="Thống kê tâm trạng" android:textStyle="bold" android:textSize="18sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_prev_week"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:padding="0dp"
+                        android:insetLeft="0dp"
+                        android:insetRight="0dp"
+                        app:icon="@drawable/ic_arrow_left"
+                        app:iconTint="@color/black"
+                        app:iconGravity="textStart"
+                        app:iconPadding="0dp"
+                        app:strokeColor="#BDBDBD"
+                        app:cornerRadius="8dp"
+                        android:layout_marginEnd="8dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_select_week"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:text="7 ngày gần đây"
+                        android:textColor="@color/black"
+                        android:textSize="13sp"
+                        app:icon="@drawable/ic_calendar"
+                        app:iconTint="@color/black"
+                        app:strokeColor="#BDBDBD"
+                        app:cornerRadius="8dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_next_week"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:padding="0dp"
+                        android:insetLeft="0dp"
+                        android:insetRight="0dp"
+                        app:icon="@drawable/ic_arrow_right"
+                        app:iconTint="@color/black"
+                        app:iconGravity="textStart"
+                        app:iconPadding="0dp"
+                        app:strokeColor="#BDBDBD"
+                        app:cornerRadius="8dp"
+                        android:layout_marginStart="8dp"/>
+
+                </LinearLayout>
+
+                <com.github.mikephil.charting.charts.PieChart
+                    android:id="@+id/pie_chart"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_mood_counts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="2">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+                        <TextView android:id="@+id/text_current_streak" android:text="0" android:textSize="24sp" android:textStyle="bold" android:textColor="@color/colorPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                        <TextView android:text="Chuỗi hiện tại" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+                        <TextView android:id="@+id/text_longest_streak" android:text="0" android:textSize="24sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                        <TextView android:text="Chuỗi dài nhất" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/streak_nodes_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center">
+                </LinearLayout>
+
+                <TextView android:id="@+id/text_total_entries" android:text="Tổng số mục: 0" android:layout_marginTop="12dp" android:gravity="center" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:text="Biểu đồ cảm xúc"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="250dp"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:paddingBottom="20dp"
+                        android:gravity="center_horizontal">
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:src="@drawable/ic_emotion_very_satisfied"/>
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:src="@drawable/ic_emotion_satisfied"/>
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:src="@drawable/ic_emotion_neutral"/>
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:src="@drawable/ic_emotion_dissatisfied"/>
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:src="@drawable/ic_emotion_very_dissatisfied"/>
+
+                    </LinearLayout>
+
+                    <com.github.mikephil.charting.charts.LineChart
+                        android:id="@+id/line_chart"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"/> </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

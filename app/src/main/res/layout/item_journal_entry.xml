@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="8dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <ImageView
+            android:id="@+id/emotion_icon"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:src="@drawable/ic_emotion_satisfied" />
+
+        <ImageButton
+            android:id="@+id/button_options"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_more_vert"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Tùy chọn"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <TextView
+            android:id="@+id/journal_time"
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="8dp" android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@id/emotion_icon"
+            app:layout_constraintTop_toTopOf="@id/emotion_icon"
+            app:layout_constraintEnd_toStartOf="@id/button_options"
+            tools:text="07:30 Sáng" />
+
+        <TextView
+            android:id="@+id/journal_content"
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp" app:layout_constraintStart_toStartOf="@id/journal_time"
+            app:layout_constraintTop_toBottomOf="@id/journal_time"
+            app:layout_constraintEnd_toStartOf="@id/button_options"
+
+            app:layout_constraintBottom_toBottomOf="parent"
+
+            tools:text="Hôm nay là một ngày tuyệt vời...\nĐây là dòng thứ hai và nó sẽ tự động xuống dòng.\n\nVà đây là dòng thứ tư." />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

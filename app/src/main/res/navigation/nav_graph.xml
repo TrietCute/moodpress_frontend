@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/nav_home">
+    <fragment
+    android:id="@+id/nav_home"
+    android:name="com.example.moodpress.feature.home.presentation.view.HomeFragment"
+    android:label="fragment_home"
+    tools:layout="@layout/fragment_home">
+        <action
+            android:id="@+id/action_homeFragment_to_createJournalFragment"
+            app:destination="@id/createJournalFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/createJournalFragment"
+        android:name="com.example.moodpress.feature.journal.presentation.view.CreateJournalFragment"
+        android:label="Tạo Nhật ký"
+        tools:layout="@layout/fragment_create_journal">
+
+        <argument
+            android:name="journalId"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+
+        <argument
+            android:name="selectedDate"
+            app:argType="long"
+            android:defaultValue="-1L" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_settings"
+        android:name="com.example.moodpress.feature.settings.presentation.view.SettingsFragment"
+        android:label="Cài đặt"
+        tools:layout="@layout/fragment_settings">
+        <action
+            android:id="@+id/action_settingsFragment_to_editProfileFragment"
+            app:destination="@id/editProfileFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/editProfileFragment"
+        android:name="com.example.moodpress.feature.user.presentation.view.EditProfileFragment"
+        android:label="Chỉnh sửa thông tin"
+        tools:layout="@layout/fragment_edit_profile" />
+
+    <fragment
+        android:id="@+id/nav_analysis"
+        android:name="com.example.moodpress.feature.stats.presentation.view.fragment.StatsFragment"
+        android:label="Phân tích"
+        tools:layout="@layout/fragment_stats" />
+
+    <fragment
+        android:id="@+id/nav_chatbot"
+        android:name="com.example.moodpress.feature.chatbot.presentation.view.ChatbotFragment"
+        android:label="Chatbot"
+        tools:layout="@layout/fragment_chatbot" />
+</navigation>

@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/text_greeting"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="50dp"
+        android:text="Xin chào, [Tên]!"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="32dp"/>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/button_edit_profile"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:focusable="true">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Chỉnh sửa thông tin cá nhân"
+            android:padding="16dp"
+            android:textSize="16sp"
+            app:drawableEndCompat="@drawable/ic_arrow_down" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/button_link_account"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:clickable="true"
+        android:focusable="true">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Liên kết tài khoản"
+            android:padding="16dp"
+            android:textSize="16sp"
+            app:drawableEndCompat="@drawable/ic_arrow_down" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_google_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:cardBackgroundColor="#F5F5F5"
+        app:cardCornerRadius="12dp"
+        app:strokeColor="#E0E0E0"
+        app:strokeWidth="1dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+        <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/img_google_avatar"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_emotion_satisfied"
+            app:shapeAppearanceOverlay="@style/CircleImage" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginStart="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Đã liên kết với Google"
+                android:textSize="12sp"
+                android:textColor="@color/colorPrimary"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/tv_google_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tên người dùng"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                android:layout_marginTop="2dp"/>
+
+            <TextView
+                android:id="@+id/tv_google_email"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="email@gmail.com"
+                android:textSize="14sp"
+                android:textColor="#757575"/>
+        </LinearLayout>
+    </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Thông báo"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="16dp"/>
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Nhắc nhở viết nhật ký"
+                    android:textSize="16sp"
+                    android:textColor="@color/black"/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_notification"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#EEEEEE"
+                android:layout_marginVertical="12dp"/>
+
+            <LinearLayout
+                android:id="@+id/layout_time_picker"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Thời gian nhắc"
+                    android:textSize="16sp"/>
+
+                <TextView
+                    android:id="@+id/tv_notification_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="20:00"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:textColor="@color/colorPrimary"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+</LinearLayout>

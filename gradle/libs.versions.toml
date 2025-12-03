@@ -1,0 +1,82 @@
+[versions]
+agp = "8.10.1"
+cloudinaryAndroid = "2.3.1"
+comGoogleGson = "2.10.1.v20230109-0753"
+converterGson = "2.9.0"
+credentials = "1.5.0"
+firebaseAuth = "24.0.1"
+firebaseBom = "34.5.0"
+glide = "4.16.0"
+googleid = "1.1.1"
+gson = "2.11.0"
+hiltAndroid = "2.51.1"
+hiltAndroidCompiler = "2.51.1"
+ioGithubLicy5352DaggerHiltAndroidGradlePlugin = "2.45-kim-rc1"
+jakartaInjectApi = "2.0.1"
+kotlin = "2.0.21"
+coreKtx = "1.16.0"
+junit = "4.13.2"
+junitVersion = "1.2.1"
+espressoCore = "3.6.1"
+lifecycleRuntimeKtx = "2.9.1"
+activityCompose = "1.10.1"
+composeBom = "2024.09.00"
+materialCalendarview = "1.4.0"
+mpandroidchart = "v3.1.0"
+photoview = "2.3.0"
+retrofit = "3.0.0"
+playServicesCastFramework = "22.2.0"
+securityCrypto = "1.1.0"
+appcompat = "1.7.1"
+firebaseAuthKtx = "24.0.1"
+material = "1.13.0"
+navigationFragmentKtx = "2.9.6"
+navigationUiKtx = "2.9.6"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
+androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
+androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
+cloudinary-android = { module = "com.cloudinary:cloudinary-android", version.ref = "cloudinaryAndroid" }
+com-google-gson = { module = "org.eclipse.orbit.bundles:com.google.gson", version.ref = "comGoogleGson" }
+converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
+firebase-auth = { module = "com.google.firebase:firebase-auth", version.ref = "firebaseAuth" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
+googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
+hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hiltAndroidCompiler" }
+io-github-licy5352-dagger-hilt-android-gradle-plugin = { module = "io.github.licy5352.dagger.hilt.android:io.github.licy5352.dagger.hilt.android.gradle.plugin", version.ref = "ioGithubLicy5352DaggerHiltAndroidGradlePlugin" }
+jakarta-inject-api = { module = "jakarta.inject:jakarta.inject-api", version.ref = "jakartaInjectApi" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+material-calendarview = { module = "com.prolificinteractive:material-calendarview", version.ref = "materialCalendarview" }
+mpandroidchart = { module = "com.github.PhilJay:MPAndroidChart", version.ref = "mpandroidchart" }
+photoview = { module = "com.github.chrisbanes:PhotoView", version.ref = "photoview" }
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+play-services-cast-framework = { group = "com.google.android.gms", name = "play-services-cast-framework", version.ref = "playServicesCastFramework" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx", version.ref = "firebaseAuthKtx" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
+androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+

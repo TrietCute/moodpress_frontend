@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#F5F5F5">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_prev_month"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:padding="0dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                app:icon="@drawable/ic_arrow_left"
+                app:iconTint="@color/black"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:strokeColor="#BDBDBD"
+                app:cornerRadius="8dp"
+                android:layout_marginEnd="8dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_select_month"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="Tháng này"
+                android:textColor="@color/black"
+                app:icon="@drawable/ic_calendar"
+                app:iconTint="@color/black"
+                app:strokeColor="#BDBDBD"
+                app:cornerRadius="8dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_next_month"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:padding="0dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                app:icon="@drawable/ic_arrow_right"
+                app:iconTint="@color/black"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:strokeColor="#BDBDBD"
+                app:cornerRadius="8dp"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:baselineAligned="false">
+
+                    <include layout="@layout/item_stat_box"
+                        android:id="@+id/box_current_streak"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"/>
+
+                    <Space android:layout_width="8dp" android:layout_height="wrap_content"/>
+
+                    <include layout="@layout/item_stat_box"
+                        android:id="@+id/box_longest_streak"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"/>
+
+                    <Space android:layout_width="8dp" android:layout_height="wrap_content"/>
+
+                    <include layout="@layout/item_stat_box"
+                        android:id="@+id/box_total_entries"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="8dp">
+                    <TextView style="@style/CalendarHeader" android:text="T2"/>
+                    <TextView style="@style/CalendarHeader" android:text="T3"/>
+                    <TextView style="@style/CalendarHeader" android:text="T4"/>
+                    <TextView style="@style/CalendarHeader" android:text="T5"/>
+                    <TextView style="@style/CalendarHeader" android:text="T6"/>
+                    <TextView style="@style/CalendarHeader" android:text="T7"/>
+                    <TextView style="@style/CalendarHeader" android:text="CN"/>
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/calendar_grid_recycler"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:overScrollMode="never"/>
+
+                <TextView
+                    android:id="@+id/tv_month_footer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="tháng 11 năm 2025\n31 mục nhập"
+                    android:gravity="start"
+                    android:layout_marginTop="12dp"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#555"/>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lọc theo cảm xúc"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="8dp"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_emotion_filter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="0dp"
+            android:paddingEnd="16dp"
+            android:clipToPadding="false"
+
+            android:scrollbars="none"
+            android:nestedScrollingEnabled="false"
+
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

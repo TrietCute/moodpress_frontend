@@ -1,0 +1,27 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Base.Theme.MoodPress" parent="Theme.Material3.Light.NoActionBar">
+    </style>
+
+    <style name="Theme.MoodPress" parent="Base.Theme.MoodPress" />
+
+    <style name="Theme.MoodPress.Splash" parent="Theme.MoodPress">
+    </style>
+
+    <style name="CircleImage" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="RoundedCorner">
+        <item name="android:background">@drawable/bg_rounded_corner</item>
+    </style>
+
+    <style name="CalendarHeader" parent="Widget.AppCompat.TextView">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+</resources>

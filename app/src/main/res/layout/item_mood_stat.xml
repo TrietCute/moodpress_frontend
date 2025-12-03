@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingVertical="8dp">
+
+    <ImageView
+        android:id="@+id/img_mood_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_emotion_satisfied"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginHorizontal="12dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_mood_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Vui vẻ"
+            android:textSize="14sp"
+            android:textStyle="bold"/>
+
+        <ProgressBar
+            android:id="@+id/progress_mood"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:progress="50"
+            android:progressTint="@color/emotion_satisfied"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_mood_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="3 (42%)"
+        android:textSize="14sp"/>
+</LinearLayout>

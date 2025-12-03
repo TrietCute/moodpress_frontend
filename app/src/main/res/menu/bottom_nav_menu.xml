@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/ic_home" android:title="Trang chủ" />
+
+    <item
+        android:id="@+id/nav_analysis"
+        android:icon="@drawable/ic_analysis_outline" android:title="Phân tích" />
+
+    <item
+        android:id="@+id/nav_chatbot"
+        android:icon="@drawable/ic_chat_outline" android:title="Chatbot" />
+
+    <item
+        android:id="@+id/nav_settings"
+        android:icon="@drawable/ic_settings" android:title="Cài đặt" />
+</menu>

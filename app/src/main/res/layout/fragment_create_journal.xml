@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    tools:context=".feature.journal.presentation.view.CreateJournalFragment">
+
+    <ImageButton
+        android:id="@+id/button_close"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Thoát"
+        android:src="@drawable/ic_close"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/button_save"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:text="Lưu"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/button_close"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/button_date_picker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:drawablePadding="8dp"
+        android:gravity="center"
+        android:padding="8dp"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:drawableEndCompat="@drawable/ic_calendar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/button_close"
+        tools:text="Hôm nay, 6 tháng 11" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/content_layout"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="16dp"
+        android:hint="Hôm nay bạn cảm thấy thế nào?"
+        app:boxBackgroundMode="none"
+        app:layout_constraintBottom_toTopOf="@+id/recycler_images"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/button_date_picker">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/content_edit_text"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@null"
+            android:gravity="top"
+            android:inputType="textMultiLine|textCapSentences"
+            android:paddingBottom="56dp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <ImageButton
+        android:id="@+id/btn_add_image"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Thêm hình ảnh"
+        android:padding="10dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_image"
+        app:layout_constraintBottom_toBottomOf="@id/content_layout"
+        app:layout_constraintEnd_toEndOf="@id/content_layout"
+        app:tint="#757575" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_images"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:layout_constraintBottom_toTopOf="@+id/emotion_prompt"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/content_layout"
+        tools:listitem="@layout/item_image_preview"
+        tools:visibility="visible"
+        tools:itemCount="3" />
+
+    <TextView
+        android:id="@+id/emotion_prompt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="Cảm xúc của bạn"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/emotion_layout"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/emotion_layout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="30dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <ImageButton
+            android:id="@+id/emotion_very_dissatisfied"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:alpha="0.5"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Rất tệ"
+            android:padding="8dp"
+            android:src="@drawable/ic_emotion_very_dissatisfied" />
+
+        <ImageButton
+            android:id="@+id/emotion_dissatisfied"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:alpha="0.5"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Tệ"
+            android:padding="8dp"
+            android:src="@drawable/ic_emotion_dissatisfied" />
+
+        <ImageButton
+            android:id="@+id/emotion_neutral"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:alpha="0.5"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Bình thường"
+            android:padding="8dp"
+            android:src="@drawable/ic_emotion_neutral" />
+
+        <ImageButton
+            android:id="@+id/emotion_satisfied"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:alpha="0.5"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Tốt"
+            android:padding="8dp"
+            android:src="@drawable/ic_emotion_satisfied" />
+
+        <ImageButton
+            android:id="@+id/emotion_very_satisfied"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:alpha="0.5"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Rất tốt"
+            android:padding="8dp"
+            android:src="@drawable/ic_emotion_very_satisfied" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
