@@ -12,20 +12,14 @@ class AuthInterceptor (
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
-
-        // Lấy User ID từ SessionManager
         val userId = sessionManager.fetchUserId()
 
-        // Nếu có User ID, thêm nó vào header "X-User-ID"
         if (userId != null) {
             val newRequest = originalRequest.newBuilder()
-                .header("X-User-ID", userId) // <-- Header mới
+                .header("X-User-ID", userId)
                 .build()
             return chain.proceed(newRequest)
         }
-
-        // Nếu không có ID (ví dụ: app vừa cài, chưa qua Splash)
-        // thì cứ gửi request gốc
         return chain.proceed(originalRequest)
     }
 }

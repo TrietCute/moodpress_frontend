@@ -31,6 +31,8 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.example.moodpress.core.ui.showLoading
+import com.example.moodpress.core.ui.hideLoading
 
 @AndroidEntryPoint
 class CreateJournalFragment : Fragment() {
@@ -51,7 +53,7 @@ class CreateJournalFragment : Fragment() {
     }
 
     private var selectedDate: Date = Date()
-    private var selectedEmotion: String = "Bình thường"
+    // Không cần biến selectedEmotion cục bộ nữa, dùng trực tiếp từ viewModel hoặc binding state
     private lateinit var emotionButtons: List<ImageButton>
 
     override fun onCreateView(
@@ -68,14 +70,18 @@ class CreateJournalFragment : Fragment() {
         setupImageRecyclerView()
 
         emotionButtons = binding.emotionLayout.children.mapNotNull { it as? ImageButton }.toList()
-        selectEmotion(binding.emotionNeutral)
 
-        // 3. Xử lý Arguments (Sửa hoặc Tạo mới)
+        // Mặc định chọn mood đầu tiên nếu chưa có
+        if (viewModel.currentMood.value.isBlank()) {
+            // Giả sử binding.emotionNeutral là mood mặc định "Bình thường"
+            viewModel.updateJournalEmotion(binding.emotionNeutral.contentDescription.toString())
+        }
+
         val passedDateMillis = args.selectedDate
         val journalId = args.journalId
 
         if (journalId != null) {
-            observeJournalData()
+            // Edit mode: data sẽ được load trong ViewModel init
             binding.buttonDatePicker.isEnabled = false
             binding.buttonDatePicker.alpha = 0.5f
         } else if (passedDateMillis != -1L) {
@@ -86,18 +92,17 @@ class CreateJournalFragment : Fragment() {
         }
 
         setupClickListeners()
+        observeJournalData()
         observeSaveState()
         observeImages()
+        observeCurrentMood() // Thêm hàm quan sát Mood
     }
 
     private fun setupImageRecyclerView() {
         imageAdapter = ImagePreviewAdapter(
-            // 1. Sự kiện Click Ảnh -> Mở Dialog
             onImageClick = { imageSource ->
-                // imageSource có thể là String (URL) hoặc Uri
                 ImageViewerDialog.show(childFragmentManager, imageSource)
             },
-            // 2. Sự kiện Xóa Ảnh (Giữ nguyên)
             onDeleteClick = { position ->
                 viewModel.removeImageAt(position)
             }
@@ -119,6 +124,18 @@ class CreateJournalFragment : Fragment() {
         }
     }
 
+    // Quan sát Mood để cập nhật UI Button
+    private fun observeCurrentMood() {
+        lifecycleScope.launch {
+            viewModel.currentMood.collect { mood ->
+                val buttonToSelect = emotionButtons.find {
+                    it.contentDescription.toString() == mood
+                }
+                buttonToSelect?.let { updateEmotionUI(it) }
+            }
+        }
+    }
+
     private fun observeJournalData() {
         lifecycleScope.launch {
             viewModel.journalData.collect { entry ->
@@ -127,14 +144,8 @@ class CreateJournalFragment : Fragment() {
                     updateDateButtonText(entry.timestamp.time)
                     selectedDate = entry.timestamp
 
-                    val buttonToSelect = emotionButtons.find {
-                        it.contentDescription.toString() == entry.emotion
-                    }
-                    buttonToSelect?.let { selectEmotion(it) }
-
-                    if (entry.imageUrls.isNotEmpty()) {
-                        viewModel.setInitialImages(entry.imageUrls)
-                    }
+                    // Mood và Image đã được set trong ViewModel.loadJournalDetails
+                    // UI sẽ tự cập nhật thông qua observeCurrentMood và observeImages
                 }
             }
         }
@@ -151,7 +162,8 @@ class CreateJournalFragment : Fragment() {
 
         emotionButtons.forEach { button ->
             button.setOnClickListener {
-                selectEmotion(button)
+                // Gọi ViewModel để update state
+                viewModel.updateJournalEmotion(button.contentDescription.toString())
             }
         }
 
@@ -162,20 +174,36 @@ class CreateJournalFragment : Fragment() {
         }
 
         binding.buttonSave.setOnClickListener {
-            val content = binding.contentEditText.text.toString()
-
-            viewModel.saveJournal(
-                content = content,
-                emotion = selectedEmotion,
-                selectedDate = selectedDate,
-            )
+            performSave()
         }
+    }
+
+
+    private fun performSave(isSilent: Boolean = false) {
+        val content = binding.contentEditText.text.toString()
+        // Lấy mood trực tiếp từ ViewModel (nguồn chuẩn nhất)
+        val currentMood = viewModel.currentMood.value
+
+        viewModel.saveJournal(
+            context = requireContext().applicationContext,
+            content = content,
+            emotion = currentMood,
+            selectedDate = selectedDate,
+            isSilent = isSilent
+        )
     }
 
     private fun observeSaveState() {
         lifecycleScope.launch {
             viewModel.saveState.collect { state ->
+                if (state !is SaveJournalState.Loading) {
+                    hideLoading()
+                }
                 when (state) {
+                    is SaveJournalState.Loading -> {
+                        showLoading("Đang lưu nhật ký...")
+                    }
+
                     is SaveJournalState.Success -> {
                         viewModel.resetState()
                         if (state.isSilent) {
@@ -183,14 +211,13 @@ class CreateJournalFragment : Fragment() {
                             findNavController().popBackStack()
                             return@collect
                         }
-
                         val analysis = state.entry.analysis
                         if (analysis != null && !analysis.isMatch) {
                             showConsistencyDialog(analysis)
                         } else if (analysis?.advice?.isNotEmpty() == true) {
                             showAdviceDialog(analysis.advice)
                         } else {
-                            Toast.makeText(requireContext(), "Đã lưu!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), "Đã lưu thành công!", Toast.LENGTH_SHORT).show()
                             findNavController().popBackStack()
                         }
                     }
@@ -206,21 +233,19 @@ class CreateJournalFragment : Fragment() {
         }
     }
 
-    // --- CÁC HÀM HELPER GIỮ NGUYÊN ---
-
     private fun showConsistencyDialog(analysis: AIAnalysis) {
+        val currentMood = viewModel.currentMood.value
+
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("🤔 AI có một chút băn khoăn...")
-            .setMessage("Bạn chọn cảm xúc là '${selectedEmotion}', nhưng AI cảm thấy nội dung lại thiên về '${analysis.suggestedEmotion}'.\n\n" +
+            .setMessage("Bạn chọn cảm xúc là '$currentMood', nhưng AI cảm thấy nội dung lại thiên về '${analysis.suggestedEmotion}'.\n\n" +
                     "Lời nhắn: \"${analysis.advice}\"\n\n" +
                     "Bạn có muốn đổi sang '${analysis.suggestedEmotion}' cho phù hợp không?")
             .setCancelable(false)
             .setPositiveButton("Đổi thành '${analysis.suggestedEmotion}'") { dialog, _ ->
-                val currentContent = binding.contentEditText.text.toString()
-                viewModel.updateJournalEmotion(analysis.suggestedEmotion, currentContent)
                 dialog.dismiss()
-                Toast.makeText(requireContext(), "Đã cập nhật cảm xúc!", Toast.LENGTH_SHORT).show()
-                findNavController().popBackStack()
+                
+                viewModel.quickUpdateEmotion(analysis.suggestedEmotion)
             }
             .setNegativeButton("Giữ nguyên") { dialog, _ ->
                 dialog.dismiss()
@@ -232,7 +257,6 @@ class CreateJournalFragment : Fragment() {
             .show()
     }
 
-    // Dialog lời khuyên thông thường
     private fun showAdviceDialog(advice: String) {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("✨ Góc chia sẻ từ AI")
@@ -245,14 +269,6 @@ class CreateJournalFragment : Fragment() {
             .setCancelable(false)
             .show()
     }
-
-
-    // Hàm helper để update UI nút bấm cảm xúc
-    private fun updateEmotionSelection(newEmotion: String) {
-        val button = emotionButtons.find { it.contentDescription.toString() == newEmotion }
-        button?.let { selectEmotion(it) }
-    }
-
 
     private fun showDatePicker() {
         val constraints = CalendarConstraints.Builder()
@@ -277,8 +293,7 @@ class CreateJournalFragment : Fragment() {
         binding.buttonDatePicker.text = sdf.format(Date(millis))
     }
 
-    private fun selectEmotion(selectedButton: ImageButton) {
-        selectedEmotion = selectedButton.contentDescription.toString()
+    private fun updateEmotionUI(selectedButton: ImageButton) {
         emotionButtons.forEach { button ->
             button.alpha = 0.5f
         }

@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.CustomCredential
+import com.example.moodpress.BuildConfig
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import dagger.Provides
@@ -18,15 +19,13 @@ import javax.inject.Singleton
 class GoogleAuthManager @Inject constructor(
     @ActivityContext private val context: Context
 ) {
-    private val WEB_CLIENT_ID = "499244080408-ts28795vlo5utl948qk7q2cmupc574qm.apps.googleusercontent.com"
-
     suspend fun signIn(): String? {
         val credentialManager = CredentialManager.create(context)
 
         // Cấu hình yêu cầu đăng nhập Google
         val googleIdOption = GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(false) // Cho phép chọn tài khoản mới
-            .setServerClientId(WEB_CLIENT_ID) // Quan trọng: Dùng Web Client ID
+            .setFilterByAuthorizedAccounts(false)
+            .setServerClientId(BuildConfig.WEB_CLIENT_ID)
             .setAutoSelectEnabled(false)
             .build()
 

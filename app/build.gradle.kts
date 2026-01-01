@@ -1,11 +1,5 @@
 import java.util.Properties
 
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localProperties.load(localPropertiesFile.inputStream())
-}
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -35,13 +29,19 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(localPropertiesFile.inputStream())
+        }
+
         val baseUrl = localProperties.getProperty("BASE_URL") ?: "http://10.0.2.2:8000/"
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
 
         val cloudName = localProperties.getProperty("CLOUDINARY_CLOUD_NAME") ?: ""
         buildConfigField("String", "CLOUD_NAME", "\"$cloudName\"")
 
-        val cloudApiKey = localProperties.getProperty("COULDINARY_API_KEY") ?: ""
+        val cloudApiKey = localProperties.getProperty("CLOUDINARY_API_KEY") ?: ""
         buildConfigField("String", "CLOUD_API_KEY", "\"$cloudApiKey\"")
 
         val webClientId = localProperties.getProperty("WEB_CLIENT_ID") ?: ""
@@ -89,6 +89,7 @@ dependencies {
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.logging.interceptor)
     implementation(libs.googleid)
     implementation(libs.mpandroidchart)
     implementation(libs.glide)

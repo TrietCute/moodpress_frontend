@@ -9,12 +9,8 @@ import javax.inject.Inject
 class ChatRepositoryImpl @Inject constructor(
     private val apiService: ChatApiService
 ) : ChatRepository {
-    override suspend fun sendMessage(message: String): ChatMessage {
-        // 1. Gọi API
-        val request = ChatRequestDto(message)
+    override suspend fun sendMessage(request: ChatRequestDto): ChatMessage {
         val response = apiService.sendMessage(request)
-
-        // 2. Map DTO sang Domain Model
         return ChatMessage(
             content = response.message,
             isUser = false,

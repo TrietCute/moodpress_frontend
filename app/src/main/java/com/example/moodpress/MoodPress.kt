@@ -3,7 +3,7 @@ package com.example.moodpress
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 import com.cloudinary.android.MediaManager
-import com.google.android.datatransport.BuildConfig
+import com.example.moodpress.BuildConfig
 
 @HiltAndroidApp
 class MoodPress() : Application() {
@@ -14,8 +14,8 @@ class MoodPress() : Application() {
 
         // Khởi tạo Cloudinary
         val config = HashMap<String, String>()
-        config["cloud_name"] = com.example.moodpress.BuildConfig.CLOUD_NAME
-        config["api_key"] = com.example.moodpress.BuildConfig.COULDINARY_API_KEY
+        config["cloud_name"] = BuildConfig.CLOUD_NAME
+        config["api_key"] = BuildConfig.CLOUD_API_KEY
         config["secure"] = "true"
 
         android.util.Log.d("CloudinaryCheck", "Config: $config")

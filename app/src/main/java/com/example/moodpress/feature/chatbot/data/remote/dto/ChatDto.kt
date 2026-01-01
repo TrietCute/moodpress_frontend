@@ -4,7 +4,14 @@ import com.google.gson.annotations.SerializedName
 import java.util.Date
 
 data class ChatRequestDto(
-    @SerializedName("message") val message: String
+    @SerializedName("message") val message: String,
+    val user_info: UserInfo
+)
+
+data class UserInfo(
+    val name: String,
+    val gender: String,
+    val birth_date: String
 )
 
 data class ChatResponseDto(

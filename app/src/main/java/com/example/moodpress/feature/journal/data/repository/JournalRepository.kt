@@ -13,6 +13,7 @@ interface JournalRepository {
         imageUrls: List<String>
     ): JournalEntry
     suspend fun getJournalEntry(id: String): JournalEntry
+
     suspend fun updateJournal(
         id: String,
         content: String,
@@ -20,9 +21,12 @@ interface JournalRepository {
         dateTime: Date?,
         imageUrls: List<String>,
     ): JournalEntry
+
     suspend fun deleteJournal(id: String)
-    suspend fun getJournalHistory(year: Int, month: Int): List<JournalEntry>
-    suspend fun analyzeJournal(
+
+     suspend fun getJournalHistory(year: Int, month: Int): List<JournalEntry>
+
+     suspend fun analyzeJournal(
         content: String,
         emotion: String,
         imageUrls: List<String>
