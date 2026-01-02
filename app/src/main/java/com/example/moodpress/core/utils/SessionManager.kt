@@ -72,10 +72,9 @@ class SessionManager @Inject constructor(
     }
 
     fun isNotificationEnabled(): Boolean {
-        return sharedPrefs.getBoolean(KEY_NOTIF_ENABLED, false) // Mặc định tắt
+        return sharedPrefs.getBoolean(KEY_NOTIF_ENABLED, false)
     }
 
-    // Trả về Pair(Giờ, Phút). Mặc định là 20:00 (8 giờ tối)
     fun getNotificationTime(): Pair<Int, Int> {
         val hour = sharedPrefs.getInt(KEY_NOTIF_HOUR, 20)
         val minute = sharedPrefs.getInt(KEY_NOTIF_MINUTE, 0)

@@ -17,8 +17,6 @@ class UpdateJournalUseCase @Inject constructor(
         imageUrls: List<String>,
 
     ): JournalEntry {
-
-        // Validation (tương tự như Save)
         if (id.isBlank()) {
             throw IllegalArgumentException("ID nhật ký không được để trống.")
         }
@@ -28,7 +26,6 @@ class UpdateJournalUseCase @Inject constructor(
         if (emotion.isBlank()) {
             throw IllegalArgumentException("Bạn phải chọn một cảm xúc.")
         }
-
         return repository.updateJournal(id, content, emotion, dateTime, imageUrls)
     }
 }

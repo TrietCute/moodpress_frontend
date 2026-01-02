@@ -30,12 +30,9 @@ import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-// Trạng thái của việc lưu
 sealed class SaveJournalState {
     data object Idle : SaveJournalState()
     data object Loading : SaveJournalState()
-    // isSilent = true: Lưu "âm thầm" (sau khi confirm AI), UI sẽ tự thoát
-    // isSilent = false: Lưu lần đầu, UI cần check AI Analysis
     data class Success(val entry: JournalEntry, val isSilent: Boolean = false) : SaveJournalState()
     data class Error(val message: String) : SaveJournalState()
 }
@@ -49,24 +46,21 @@ class CreateJournalViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _saveState = MutableStateFlow<SaveJournalState>(SaveJournalState.Idle)
-    val saveState: StateFlow<SaveJournalState> = _saveState
+    val saveState: StateFlow<SaveJournalState> = _saveState.asStateFlow()
 
     private val _journalData = MutableStateFlow<JournalEntry?>(null)
-    val journalData: StateFlow<JournalEntry?> = _journalData
+    val journalData: StateFlow<JournalEntry?> = _journalData.asStateFlow()
 
-    private val _currentMood = MutableStateFlow<String>("")
+    private val _currentMood = MutableStateFlow("")
     val currentMood: StateFlow<String> = _currentMood.asStateFlow()
 
-    // ID hiện tại, dùng để biết đang Create hay Edit, và lưu lại ID sau khi Create thành công
-    var currentJournalId: String? = savedStateHandle["journalId"]
-    private val isEditMode: Boolean
-        get() = currentJournalId != null
-
     private val _currentImages = MutableStateFlow<List<Any>>(emptyList())
-    val currentImages: StateFlow<List<Any>> = _currentImages
+    val currentImages: StateFlow<List<Any>> = _currentImages.asStateFlow()
+
+    var currentJournalId: String? = savedStateHandle["journalId"]
+    private val isEditMode: Boolean get() = currentJournalId != null
 
     init {
-        // Nếu có ID truyền vào (Edit mode), load dữ liệu
         currentJournalId?.let { loadJournalDetails(it) }
     }
 
@@ -90,9 +84,7 @@ class CreateJournalViewModel @Inject constructor(
     }
 
     fun addImages(uris: List<Uri>) {
-        val currentList = _currentImages.value.toMutableList()
-        currentList.addAll(uris)
-        _currentImages.value = currentList
+        _currentImages.update { it + uris }
     }
 
     fun removeImageAt(index: Int) {
@@ -105,37 +97,28 @@ class CreateJournalViewModel @Inject constructor(
 
     fun updateJournalEmotion(newEmotion: String) {
         _currentMood.value = newEmotion
-        // Cập nhật luôn vào object data nếu có
         _journalData.update { it?.copy(emotion = newEmotion) }
     }
 
-    // --- FIX CHÍNH: Hàm Update nhanh dùng cho xác nhận AI ---
-    // Hàm này bỏ qua bước xử lý ảnh, chỉ update text/emotion dựa trên ID đã có
     fun quickUpdateEmotion(newEmotion: String) {
         val journalId = currentJournalId ?: return
 
-        // 1. Cập nhật UI state ngay lập tức
         _currentMood.value = newEmotion
         _saveState.value = SaveJournalState.Loading
 
         viewModelScope.launch {
             try {
-                // 2. Lấy dữ liệu hiện tại (Content + Ảnh đã upload xong từ bước trước)
                 val currentContent = _journalData.value?.content ?: ""
-                // Lúc này _currentImages toàn là String (URL) do đã xử lý ở saveJournal
-                // Ép kiểu an toàn để lấy list String
                 val currentImageUrls = _currentImages.value.filterIsInstance<String>()
 
-                // 3. Gọi Update UseCase (Nhanh vì không upload ảnh)
                 val resultEntry = updateJournalUseCase(
                     id = journalId,
                     content = currentContent,
                     emotion = newEmotion,
-                    dateTime = null, // Giữ nguyên ngày giờ cũ
+                    dateTime = null,
                     imageUrls = currentImageUrls
                 )
 
-                // 4. Cập nhật lại data và báo Success với isSilent = true
                 _journalData.value = resultEntry
                 _saveState.value = SaveJournalState.Success(resultEntry, isSilent = true)
 
@@ -145,20 +128,19 @@ class CreateJournalViewModel @Inject constructor(
         }
     }
 
-    // --- Hàm Lưu chính (Create/Edit) ---
     fun saveJournal(
         context: Context,
         content: String,
         emotion: String,
         selectedDate: Date,
-        isSilent: Boolean // Biến này dùng để điều khiển flow UI
+        isSilent: Boolean
     ) {
         if (content.isBlank()) {
             _saveState.value = SaveJournalState.Error("Nội dung không được để trống.")
             return
         }
-        val finalEmotion = _currentMood.value.ifBlank { emotion }
 
+        val finalEmotion = _currentMood.value.ifBlank { emotion }
         if (finalEmotion.isBlank()) {
             _saveState.value = SaveJournalState.Error("Vui lòng chọn một cảm xúc.")
             return
@@ -168,57 +150,47 @@ class CreateJournalViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val finalUrls = mutableListOf<String>()
-                val newUrisToUpload = mutableListOf<Uri>()
+                // Separate existing URLs from new URIs
+                val currentList = _currentImages.value
+                val existingUrls = currentList.filterIsInstance<String>().toMutableList()
+                val newUris = currentList.filterIsInstance<Uri>()
 
-                // Phân loại ảnh
-                _currentImages.value.forEach { item ->
-                    if (item is String) finalUrls.add(item)
-                    else if (item is Uri) newUrisToUpload.add(item)
-                }
-
-                // Upload ảnh mới (Tốn thời gian ở đây)
-                if (newUrisToUpload.isNotEmpty()) {
-                    val uploadJobs = newUrisToUpload.map { uri ->
+                // Upload new images
+                if (newUris.isNotEmpty()) {
+                    val uploadedUrls = newUris.map { uri ->
                         async { uploadImageToCloudinary(context, uri) }
-                    }
-                    val newUrls = uploadJobs.awaitAll()
-                    finalUrls.addAll(newUrls)
+                    }.awaitAll()
+                    existingUrls.addAll(uploadedUrls)
                 }
 
-                val resultEntry: JournalEntry
-
-                if (isEditMode) {
-                    resultEntry = updateJournalUseCase(
+                val resultEntry = if (isEditMode) {
+                    updateJournalUseCase(
                         id = currentJournalId!!,
                         content = content,
                         emotion = finalEmotion,
                         dateTime = null,
-                        imageUrls = finalUrls
+                        imageUrls = existingUrls
                     )
                 } else {
-                    val finalDateTime = if (isToday(selectedDate)) combineDateAndTime(selectedDate) else setNoonTime(selectedDate)
+                    val finalDateTime = if (isToday(selectedDate)) {
+                        combineDateAndTime(selectedDate)
+                    } else {
+                        setNoonTime(selectedDate)
+                    }
 
-                    resultEntry = saveJournalUseCase(
+                    saveJournalUseCase(
                         content = content,
                         emotion = finalEmotion,
                         dateTime = finalDateTime,
-                        imageUrls = finalUrls
+                        imageUrls = existingUrls
                     )
                 }
 
-                // --- FIX QUAN TRỌNG: Cập nhật lại State sau khi lưu thành công ---
-                // 1. Lưu lại ID mới tạo (để nếu user bấm đổi mood, ta có ID để update nhanh)
+                // Update internal state after successful save
                 currentJournalId = resultEntry.id
-
-                // 2. Cập nhật _journalData
                 _journalData.value = resultEntry
+                _currentImages.value = resultEntry.imageUrls // Replace mixed list with pure URL list
 
-                // 3. Cập nhật _currentImages thành toàn bộ là URL (String)
-                // Để nếu hàm saveJournal có bị gọi lại, nó sẽ KHÔNG upload ảnh lại nữa
-                _currentImages.value = resultEntry.imageUrls
-
-                // Trả về kết quả
                 _saveState.value = SaveJournalState.Success(resultEntry, isSilent = isSilent)
 
             } catch (e: Exception) {
@@ -227,9 +199,13 @@ class CreateJournalViewModel @Inject constructor(
         }
     }
 
-    // --- CÁC HÀM HELPER (Giữ nguyên) ---
+    fun resetState() {
+        _saveState.value = SaveJournalState.Idle
+    }
 
-    private suspend fun uploadImageToCloudinary(context: Context, uri: Uri): String = suspendCancellableCoroutine { continuation ->
+    // --- Helpers ---
+
+    private suspend fun uploadImageToCloudinary(context: Context, uri: Uri): String = suspendCancellableCoroutine { cont ->
         val preprocessChain = ImagePreprocessChain()
             .loadWith(BitmapDecoder(1080, 1080))
             .saveWith(BitmapEncoder(BitmapEncoder.Format.JPEG, 80))
@@ -237,8 +213,12 @@ class CreateJournalViewModel @Inject constructor(
         MediaManager.get().upload(uri).unsigned("moodpress_android_upload")
             .preprocess(preprocessChain)
             .callback(object : UploadCallback {
-                override fun onSuccess(requestId: String, resultData: Map<*, *>) { continuation.resume(resultData["secure_url"] as String) }
-                override fun onError(requestId: String, error: ErrorInfo) { continuation.resumeWithException(Exception("Upload thất bại: ${error.description}")) }
+                override fun onSuccess(requestId: String, resultData: Map<*, *>) {
+                    cont.resume(resultData["secure_url"] as String)
+                }
+                override fun onError(requestId: String, error: ErrorInfo) {
+                    cont.resumeWithException(Exception("Upload thất bại: ${error.description}"))
+                }
                 override fun onStart(requestId: String) {}
                 override fun onProgress(requestId: String, bytes: Long, totalBytes: Long) {}
                 override fun onReschedule(requestId: String, error: ErrorInfo) {}
@@ -247,32 +227,28 @@ class CreateJournalViewModel @Inject constructor(
 
     private fun combineDateAndTime(selectedDate: Date): Date {
         val now = Calendar.getInstance()
-        val selected = Calendar.getInstance()
-        selected.time = selectedDate
-        selected.set(Calendar.HOUR_OF_DAY, now.get(Calendar.HOUR_OF_DAY))
-        selected.set(Calendar.MINUTE, now.get(Calendar.MINUTE))
-        selected.set(Calendar.SECOND, now.get(Calendar.SECOND))
-        return selected.time
+        return Calendar.getInstance().apply {
+            time = selectedDate
+            set(Calendar.HOUR_OF_DAY, now.get(Calendar.HOUR_OF_DAY))
+            set(Calendar.MINUTE, now.get(Calendar.MINUTE))
+            set(Calendar.SECOND, now.get(Calendar.SECOND))
+        }.time
     }
 
     private fun setNoonTime(selectedDate: Date): Date {
-        val selected = Calendar.getInstance()
-        selected.time = selectedDate
-        selected.set(Calendar.HOUR_OF_DAY, 12)
-        selected.set(Calendar.MINUTE, 0)
-        selected.set(Calendar.SECOND, 0)
-        return selected.time
+        return Calendar.getInstance().apply {
+            time = selectedDate
+            set(Calendar.HOUR_OF_DAY, 12)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+        }.time
     }
 
     private fun isToday(date: Date): Boolean {
         val today = Calendar.getInstance()
-        val selected = Calendar.getInstance()
-        selected.time = date
+        val selected = Calendar.getInstance().apply { time = date }
+
         return today.get(Calendar.YEAR) == selected.get(Calendar.YEAR) &&
                 today.get(Calendar.DAY_OF_YEAR) == selected.get(Calendar.DAY_OF_YEAR)
-    }
-
-    fun resetState() {
-        _saveState.value = SaveJournalState.Idle
     }
 }

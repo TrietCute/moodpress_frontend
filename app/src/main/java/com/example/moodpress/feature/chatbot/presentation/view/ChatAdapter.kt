@@ -10,7 +10,7 @@ import com.example.moodpress.databinding.ItemChatBotBinding
 import com.example.moodpress.databinding.ItemChatUserBinding
 import com.example.moodpress.feature.chatbot.domain.model.ChatMessage
 
-class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.ChatViewHolder>(DiffCallback()) {
+class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.BaseChatViewHolder>(ChatDiffCallback()) {
 
     companion object {
         private const val TYPE_USER = 1
@@ -18,51 +18,52 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.ChatViewHolder>(DiffCal
     }
 
     override fun getItemViewType(position: Int): Int {
-        // Kiểm tra người gửi để chọn Layout
         return if (getItem(position).isUser) TYPE_USER else TYPE_BOT
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseChatViewHolder {
         val inflater = LayoutInflater.from(parent.context)
-        return if (viewType == TYPE_USER) {
-            val binding = ItemChatUserBinding.inflate(inflater, parent, false)
-            UserViewHolder(binding)
-        } else {
-            val binding = ItemChatBotBinding.inflate(inflater, parent, false)
-            BotViewHolder(binding)
+        return when (viewType) {
+            TYPE_USER -> {
+                val binding = ItemChatUserBinding.inflate(inflater, parent, false)
+                UserViewHolder(binding)
+            }
+            else -> { // TYPE_BOT
+                val binding = ItemChatBotBinding.inflate(inflater, parent, false)
+                BotViewHolder(binding)
+            }
         }
     }
 
-    override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: BaseChatViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
 
-    // Lớp cha trừu tượng
-    abstract class ChatViewHolder(binding: ViewBinding) : RecyclerView.ViewHolder(binding.root) {
+    // --- ViewHolders ---
+
+    abstract class BaseChatViewHolder(binding: ViewBinding) : RecyclerView.ViewHolder(binding.root) {
         abstract fun bind(message: ChatMessage)
     }
 
-    // ViewHolder cho User
-    inner class UserViewHolder(private val binding: ItemChatUserBinding) : ChatViewHolder(binding) {
+    class UserViewHolder(private val binding: ItemChatUserBinding) : BaseChatViewHolder(binding) {
         override fun bind(message: ChatMessage) {
             binding.tvMessage.text = message.content
         }
     }
 
-    // ViewHolder cho Bot
-    inner class BotViewHolder(private val binding: ItemChatBotBinding) : ChatViewHolder(binding) {
+    class BotViewHolder(private val binding: ItemChatBotBinding) : BaseChatViewHolder(binding) {
         override fun bind(message: ChatMessage) {
             binding.tvMessage.text = message.content
         }
     }
+}
 
-    class DiffCallback : DiffUtil.ItemCallback<ChatMessage>() {
-        override fun areItemsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean {
-            // Giả sử ChatMessage có ID, nếu không có thì so sánh content + time
-            return oldItem == newItem
-        }
-        override fun areContentsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean {
-            return oldItem == newItem
-        }
+class ChatDiffCallback : DiffUtil.ItemCallback<ChatMessage>() {
+    override fun areItemsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean {
+        return oldItem === newItem || oldItem == newItem
+    }
+
+    override fun areContentsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean {
+        return oldItem == newItem
     }
 }

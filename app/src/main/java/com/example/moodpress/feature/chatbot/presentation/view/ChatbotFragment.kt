@@ -4,10 +4,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.widget.addTextChangedListener
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.moodpress.R
 import com.example.moodpress.databinding.FragmentChatbotBinding
@@ -20,9 +22,8 @@ class ChatbotFragment : Fragment() {
 
     private var _binding: FragmentChatbotBinding? = null
     private val binding get() = _binding!!
-
     private val viewModel: ChatViewModel by viewModels()
-    private lateinit var chatAdapter: ChatAdapter
+    private val chatAdapter = ChatAdapter()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentChatbotBinding.inflate(inflater, container, false)
@@ -45,51 +46,67 @@ class ChatbotFragment : Fragment() {
                     viewModel.startNewConversation()
                     true
                 }
-
                 else -> false
             }
         }
     }
 
     private fun setupRecyclerView() {
-        chatAdapter = ChatAdapter()
-        binding.recyclerChat.apply {
+        with(binding.recyclerChat) {
             adapter = chatAdapter
             layoutManager = LinearLayoutManager(context).apply {
-                stackFromEnd = true
+                stackFromEnd = true // Tin nhắn mới nhất nằm dưới cùng
             }
         }
     }
 
     private fun setupInput() {
-        binding.edtMessage.addTextChangedListener { text ->
-            val isEnabled = !text.isNullOrBlank()
-            binding.btnSend.isEnabled = isEnabled
-            binding.btnSend.alpha = if (isEnabled) 1.0f else 0.5f
-        }
+        with(binding) {
+            // Theo dõi thay đổi text để bật/tắt nút gửi
+            edtMessage.doAfterTextChanged { text ->
+                updateSendButtonState(text.toString())
+            }
 
-        binding.btnSend.setOnClickListener {
-            val msg = binding.edtMessage.text.toString()
-            viewModel.sendMessage(msg)
-            binding.edtMessage.setText("") // Xóa ô nhập
-        }
-    }
-
-    private fun observeViewModel() {
-        lifecycleScope.launch {
-            viewModel.messages.collect { msgs ->
-                chatAdapter.submitList(msgs)
-                if (msgs.isNotEmpty()) {
-                    binding.recyclerChat.smoothScrollToPosition(msgs.size - 1)
+            btnSend.setOnClickListener {
+                val msg = edtMessage.text.toString()
+                if (msg.isNotBlank()) {
+                    viewModel.sendMessage(msg)
+                    edtMessage.setText("")
                 }
             }
         }
+    }
 
-        // (Tùy chọn) Hiển thị trạng thái "Bot đang gõ..."
-        lifecycleScope.launch {
-            viewModel.isLoading.collect {
-                // Bạn có thể thêm một ProgressBar nhỏ hoặc text "Đang nhập..." vào UI
-                // binding.progressBar.isVisible = loading
+    private fun updateSendButtonState(text: String, isLoading: Boolean = false) {
+        val hasText = text.isNotBlank()
+        val canSend = hasText && !isLoading
+
+        binding.btnSend.isEnabled = canSend
+        binding.btnSend.alpha = if (canSend) 1.0f else 0.5f
+    }
+
+    private fun observeViewModel() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // 1. Observe Messages
+                launch {
+                    viewModel.messages.collect { msgs ->
+                        chatAdapter.submitList(msgs) {
+                            // Scroll xuống cuối khi list cập nhật xong
+                            if (msgs.isNotEmpty()) {
+                                binding.recyclerChat.scrollToPosition(msgs.size - 1)
+                            }
+                        }
+                    }
+                }
+
+                // 2. Observe Loading State
+                launch {
+                    viewModel.isLoading.collect { isLoading ->
+                        // Cập nhật trạng thái nút gửi (tránh spam khi đang load)
+                        updateSendButtonState(binding.edtMessage.text.toString(), isLoading)
+                    }
+                }
             }
         }
     }

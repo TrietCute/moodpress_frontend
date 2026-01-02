@@ -1,6 +1,5 @@
 package com.example.moodpress.feature.stats.presentation.view.adapter
 
-import android.annotation.SuppressLint
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -12,23 +11,24 @@ import androidx.core.graphics.toColorInt
 
 data class FilterItem(
     val label: String,
-    val emotionKey: String?,
-    val isSelected: Boolean = false
+    val emotionKey: String?
 )
 
 class EmotionFilterAdapter(
     private val onFilterSelected: (String?) -> Unit
 ) : RecyclerView.Adapter<EmotionFilterAdapter.ViewHolder>() {
 
-    // Danh sách cố định các cảm xúc
-    private var items = mutableListOf(
-        FilterItem("Tất cả", null, true),
+    private val items = listOf(
+        FilterItem("Tất cả", null),
         FilterItem("Rất tốt", "Rất tốt"),
         FilterItem("Tốt", "Tốt"),
         FilterItem("Bình thường", "Bình thường"),
         FilterItem("Tệ", "Tệ"),
         FilterItem("Rất tệ", "Rất tệ")
     )
+
+    // Theo dõi vị trí đang chọn để tối ưu update (Default: 0 - Tất cả)
+    private var selectedPosition = 0
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemEmotionFilterBinding.inflate(
@@ -38,7 +38,7 @@ class EmotionFilterAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(items[position], position)
+        holder.bind(items[position], position == selectedPosition)
     }
 
     override fun getItemCount() = items.size
@@ -46,20 +46,25 @@ class EmotionFilterAdapter(
     inner class ViewHolder(private val binding: ItemEmotionFilterBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: FilterItem, position: Int) {
-            binding.tvLabel.text = item.label
+        fun bind(item: FilterItem, isSelected: Boolean) {
+            with(binding) {
+                tvLabel.text = item.label
+                imgIcon.setImageResource(getIconRes(item.emotionKey))
 
-            // Set Icon (Nếu là "Tất cả" thì dùng icon đặc biệt hoặc ẩn đi)
-            if (item.emotionKey == null) {
-                binding.imgIcon.setImageResource(R.drawable.ic_view_list) // Icon tượng trưng cho All
-            } else {
-                binding.imgIcon.setImageResource(getMoodIconRes(item.emotionKey))
+                updateAppearance(isSelected)
+
+                root.setOnClickListener {
+                    handleSelection(bindingAdapterPosition, item.emotionKey)
+                }
             }
+        }
 
-            // Xử lý trạng thái Selected (Đổi màu nền)
+        private fun updateAppearance(isSelected: Boolean) {
             val context = binding.root.context
-            if (item.isSelected) {
+
+            if (isSelected) {
                 binding.cardRoot.setCardBackgroundColor(ContextCompat.getColor(context, R.color.colorPrimary))
+                binding.cardRoot.strokeWidth = 0
                 binding.tvLabel.setTextColor(Color.WHITE)
                 binding.imgIcon.setColorFilter(Color.WHITE)
             } else {
@@ -67,20 +72,13 @@ class EmotionFilterAdapter(
                 binding.cardRoot.strokeWidth = 3
                 binding.cardRoot.strokeColor = "#E0E0E0".toColorInt()
                 binding.tvLabel.setTextColor(Color.BLACK)
-                binding.imgIcon.colorFilter = null // Reset màu gốc của icon
-            }
-
-            // Click Listener
-            binding.root.setOnClickListener {
-                // Cập nhật trạng thái chọn
-                updateSelection(position)
-                // Gửi sự kiện ra ngoài
-                onFilterSelected(item.emotionKey)
+                binding.imgIcon.colorFilter = null
             }
         }
 
-        private fun getMoodIconRes(emotion: String): Int {
-            return when (emotion) {
+        private fun getIconRes(emotionKey: String?): Int {
+            return when (emotionKey) {
+                null -> R.drawable.ic_view_list
                 "Rất tốt" -> R.drawable.ic_emotion_very_satisfied
                 "Tốt" -> R.drawable.ic_emotion_satisfied
                 "Bình thường" -> R.drawable.ic_emotion_neutral
@@ -91,11 +89,16 @@ class EmotionFilterAdapter(
         }
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    private fun updateSelection(selectedIndex: Int) {
-        items.forEachIndexed { index, item ->
-            items[index] = item.copy(isSelected = (index == selectedIndex))
-        }
-        notifyDataSetChanged()
+    private fun handleSelection(newPosition: Int, emotionKey: String?) {
+        if (newPosition == RecyclerView.NO_POSITION || newPosition == selectedPosition) return
+
+        val previousPosition = selectedPosition
+        selectedPosition = newPosition
+
+        // Chỉ update 2 item bị thay đổi thay vì vẽ lại toàn bộ list
+        notifyItemChanged(previousPosition)
+        notifyItemChanged(selectedPosition)
+
+        onFilterSelected(emotionKey)
     }
 }

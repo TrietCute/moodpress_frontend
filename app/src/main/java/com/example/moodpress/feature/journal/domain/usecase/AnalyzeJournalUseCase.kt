@@ -13,8 +13,6 @@ class AnalyzeJournalUseCase @Inject constructor(
         emotion: String,
         imageUrls: List<String>
     ): AIAnalysis {
-
-        // Validation cơ bản trước khi gọi server
         if (content.isBlank()) {
             throw IllegalArgumentException("Nội dung không được để trống để phân tích.")
         }

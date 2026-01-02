@@ -21,8 +21,6 @@ class GoogleAuthManager @Inject constructor(
 ) {
     suspend fun signIn(): String? {
         val credentialManager = CredentialManager.create(context)
-
-        // Cấu hình yêu cầu đăng nhập Google
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
             .setServerClientId(BuildConfig.WEB_CLIENT_ID)
@@ -34,18 +32,15 @@ class GoogleAuthManager @Inject constructor(
             .build()
 
         return try {
-            // Gọi hộp thoại đăng nhập
             val result = credentialManager.getCredential(
                 request = request,
                 context = context
             )
 
-            // Xử lý kết quả trả về
             when (val credential = result.credential) {
                 is CustomCredential -> {
                     if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                         val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-                        // ĐÂY LÀ THỨ CHÚNG TA CẦN: ID TOKEN
                         val idToken = googleIdTokenCredential.idToken
                         Log.d("GoogleAuth", "Token: $idToken")
                         return idToken

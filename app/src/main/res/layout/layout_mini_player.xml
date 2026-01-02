@@ -1,59 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="64dp"
-    android:layout_marginHorizontal="16dp"
-    android:layout_marginBottom="16dp"
-    app:cardBackgroundColor="#212121"
-    app:cardCornerRadius="32dp"
-    app:cardElevation="8dp">
+    android:id="@+id/cardMiniPlayer"
+    android:layout_width="wrap_content"
+    android:layout_height="60dp"
+    app:cardCornerRadius="30dp"
+    app:cardElevation="10dp"
+    app:cardBackgroundColor="#212121">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:paddingHorizontal="16dp">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:animateLayoutChanges="true"> <ImageView
+        android:id="@+id/imgDisk"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:padding="12dp"
+        android:src="@drawable/ic_music_note"
+        app:tint="@color/white" />
 
-        <ImageView
-            android:id="@+id/imgDisk"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_music_note"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/white" />
-
-        <TextView
-            android:id="@+id/tvStatus"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:ellipsize="marquee"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:marqueeRepeatLimit="marquee_forever"
-            android:singleLine="true"
-            android:text="Đang phát âm thanh thư giãn..."
-            android:textColor="@color/white"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btnStopAll"
-            app:layout_constraintStart_toEndOf="@id/imgDisk"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <ImageButton
-            android:id="@+id/btnStopAll"
+        <LinearLayout
+            android:id="@+id/layoutControls"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:visibility="gone"> <ImageButton
+            android:id="@+id/btnPauseResume"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_media_pause"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="#FF5252" />
+            android:src="@drawable/ic_pause"
+            app:tint="@color/white" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            <ImageButton
+                android:id="@+id/btnStop"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_stop_square"
+                android:padding="12dp"
+                app:tint="#FF5252" />
+
+            <View android:layout_width="8dp" android:layout_height="1dp"/>
+        </LinearLayout>
+    </LinearLayout>
 </androidx.cardview.widget.CardView>

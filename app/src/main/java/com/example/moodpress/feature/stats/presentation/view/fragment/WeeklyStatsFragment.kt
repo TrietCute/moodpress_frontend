@@ -1,7 +1,10 @@
 package com.example.moodpress.feature.stats.presentation.view.fragment
 
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,16 +14,21 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.moodpress.R
 import com.example.moodpress.databinding.FragmentWeeklyStatsBinding
 import com.example.moodpress.feature.stats.domain.model.DailyMood
 import com.example.moodpress.feature.stats.domain.model.WeeklyStats
 import com.example.moodpress.feature.stats.presentation.view.adapter.MoodCountAdapter
+import com.example.moodpress.feature.stats.presentation.view.bottomsheet.WeekSelectionBottomSheet
+import com.example.moodpress.feature.stats.presentation.viewmodel.NavigationState
 import com.example.moodpress.feature.stats.presentation.viewmodel.StatsUiState
 import com.example.moodpress.feature.stats.presentation.viewmodel.WeeklyStatsViewModel
 import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
@@ -30,12 +38,12 @@ import com.github.mikephil.charting.data.PieEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.highlight.Highlight
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener
+import com.github.mikephil.charting.renderer.YAxisRenderer
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
-import androidx.core.graphics.createBitmap
-import com.example.moodpress.feature.stats.presentation.view.bottomsheet.WeekSelectionBottomSheet
 
 @AndroidEntryPoint
 class WeeklyStatsFragment : Fragment() {
@@ -44,7 +52,7 @@ class WeeklyStatsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: WeeklyStatsViewModel by viewModels()
-    private lateinit var moodAdapter: MoodCountAdapter
+    private val moodAdapter by lazy { MoodCountAdapter() }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentWeeklyStatsBinding.inflate(inflater, container, false)
@@ -54,202 +62,186 @@ class WeeklyStatsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupClickListeners()
-        setupMoodRecycler()
-        setupPieChartConfig()
-        setupLineChartConfig()
+        setupViews()
+        setupCharts()
         observeViewModel()
-        binding.btnSelectWeek.setOnClickListener {
-            showWeekSelectionDialog()
-        }
     }
 
-    private fun setupClickListeners() {
-        // 1. Nút Chọn Tuần (Mở BottomSheet)
-        binding.btnSelectWeek.setOnClickListener {
-            showWeekSelectionDialog()
-        }
-
-        // 2. Nút Trái
-        binding.btnPrevWeek.setOnClickListener {
-            viewModel.onPrevWeekClicked()
-        }
-
-        // 3. Nút Phải
-        binding.btnNextWeek.setOnClickListener {
-            viewModel.onNextWeekClicked()
-        }
-    }
-
-    private fun showWeekSelectionDialog() {
-        val firstDate = viewModel.firstEntryDate
-
-        val dialog = WeekSelectionBottomSheet(firstDate) { selectedWeek ->
-            // 1. Cập nhật text nút bấm
-            binding.btnSelectWeek.text = selectedWeek.label
-            // 2. Gọi ViewModel tải dữ liệu
-            viewModel.loadWeeklyStats(selectedWeek.startDate)
-        }
-        dialog.show(childFragmentManager, "WeekSelection")
-    }
-
-    private fun setupMoodRecycler() {
-        moodAdapter = MoodCountAdapter()
-        binding.recyclerMoodCounts.apply {
+    private fun setupViews() {
+        // Recycler View
+        with(binding.recyclerMoodCounts) {
             layoutManager = LinearLayoutManager(context)
             adapter = moodAdapter
-            isNestedScrollingEnabled = false // Để cuộn mượt trong ScrollView
+            isNestedScrollingEnabled = false
         }
+
+        // Click Listeners
+        with(binding) {
+            btnSelectWeek.setOnClickListener { showWeekSelectionDialog() }
+            btnPrevWeek.setOnClickListener { viewModel.onPrevWeekClicked() }
+            btnNextWeek.setOnClickListener { viewModel.onNextWeekClicked() }
+        }
+    }
+
+    private fun setupCharts() {
+        setupPieChartConfig()
+        setupLineChartConfig()
     }
 
     private fun observeViewModel() {
-        lifecycleScope.launch {
-            viewModel.uiState.collect { state ->
-                when (state) {
-                    is StatsUiState.Success -> {
-                        // Cập nhật UI
-                        updateStreakInfo(state.stats)
-                        updatePieChart(state.stats)
-                        updateLineChart(state.stats)
-                        moodAdapter.submitList(state.stats.moodCounts)
-                    }
-                    is StatsUiState.Error -> {
-                        Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
-                    }
-                    is StatsUiState.Loading -> { }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.uiState.collect { handleUiState(it) }
                 }
-            }
-        }
-
-        lifecycleScope.launch {
-            viewModel.navState.collect { navState ->
-                // Cập nhật Label
-                binding.btnSelectWeek.text = navState.currentLabel
-
-                // Cập nhật nút Prev
-                binding.btnPrevWeek.isEnabled = navState.isPrevEnabled
-                binding.btnPrevWeek.alpha = if (navState.isPrevEnabled) 1.0f else 0.3f
-
-                // Cập nhật nút Next
-                binding.btnNextWeek.isEnabled = navState.isNextEnabled
-                binding.btnNextWeek.alpha = if (navState.isNextEnabled) 1.0f else 0.3f
+                launch {
+                    viewModel.navState.collect { handleNavState(it) }
+                }
             }
         }
     }
 
-    // --- 1. LOGIC STREAK (CHUỖI NGÀY) ---
-    private fun updateStreakInfo(stats: WeeklyStats) {
-        binding.textCurrentStreak.text = stats.currentStreak.toString()
-        binding.textLongestStreak.text = stats.longestStreak.toString()
-        binding.textTotalEntries.text = "Tổng số mục đã nhập: ${stats.totalEntries}"
+    private fun handleUiState(state: StatsUiState) {
+        when (state) {
+            is StatsUiState.Success -> {
+                updateStreakInfo(state.stats)
+                updatePieChart(state.stats)
+                updateLineChart(state.stats)
+                moodAdapter.submitList(state.stats.moodCounts)
+            }
+            is StatsUiState.Error -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+            }
+            is StatsUiState.Loading -> { /* Handle Loading */ }
+        }
+    }
 
-        // Vẽ 7 node tròn (T2 -> CN)
-        binding.streakNodesContainer.removeAllViews()
+    private fun handleNavState(navState: NavigationState) {
+        binding.btnSelectWeek.text = navState.currentLabel
+
+        updateNavButton(binding.btnPrevWeek, navState.isPrevEnabled)
+        updateNavButton(binding.btnNextWeek, navState.isNextEnabled)
+    }
+
+    private fun updateNavButton(view: View, isEnabled: Boolean) {
+        view.isEnabled = isEnabled
+        view.alpha = if (isEnabled) 1.0f else 0.3f
+    }
+
+    // --- STREAK LOGIC ---
+
+    private fun updateStreakInfo(stats: WeeklyStats) {
+        with(binding) {
+            textCurrentStreak.text = stats.currentStreak.toString()
+            textLongestStreak.text = stats.longestStreak.toString()
+            textTotalEntries.text = "Tổng số mục đã nhập: ${stats.totalEntries}"
+
+            drawStreakNodes(stats.activeDays)
+        }
+    }
+
+    private fun drawStreakNodes(activeDays: List<Boolean>) {
+        val container = binding.streakNodesContainer
+        container.removeAllViews()
 
         val daysLabel = listOf("T2", "T3", "T4", "T5", "T6", "T7", "CN")
+        val density = resources.displayMetrics.density
+        val sizePx = (24 * density).toInt()
+        val marginPx = (8 * density).toInt()
 
-        stats.activeDays.forEachIndexed { index, isActive ->
-            // Tạo layout con bằng code
+        activeDays.forEachIndexed { index, isActive ->
             val nodeLayout = LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
-                gravity = android.view.Gravity.CENTER
+                gravity = Gravity.CENTER
                 layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             }
 
-            // Hình tròn
             val circleView = View(context).apply {
-                val sizePx = (24 * resources.displayMetrics.density).toInt()
+                layoutParams = LinearLayout.LayoutParams(sizePx, sizePx).apply {
+                    bottomMargin = marginPx
+                }
                 background = ContextCompat.getDrawable(context,
                     if (isActive) R.drawable.bg_circle_active else R.drawable.bg_circle_inactive
                 )
-                layoutParams = LinearLayout.LayoutParams(sizePx, sizePx).apply {
-                    bottomMargin = (8 * resources.displayMetrics.density).toInt() // Margin bottom 8dp
-                }
             }
 
             val textView = TextView(context).apply {
                 text = daysLabel[index]
                 textSize = 12f
                 setTextColor(Color.GRAY)
-                gravity = android.view.Gravity.CENTER
+                gravity = Gravity.CENTER
             }
 
             nodeLayout.addView(circleView)
             nodeLayout.addView(textView)
-            binding.streakNodesContainer.addView(nodeLayout)
+            container.addView(nodeLayout)
         }
     }
 
-    // --- 2. LOGIC PIE CHART (BÁN NGUYỆT) ---
+    // --- PIE CHART LOGIC ---
+
     private fun setupPieChartConfig() {
         binding.pieChart.apply {
             isDrawHoleEnabled = true
             setHoleColor(Color.TRANSPARENT)
             transparentCircleRadius = 0f
-            holeRadius = 60f // Lỗ rỗng ở giữa
-            maxAngle = 180f // Bán nguyệt
-            rotationAngle = 180f // Xoay để cong lên trên
+            holeRadius = 60f
+            maxAngle = 180f
+            rotationAngle = 180f
             setCenterTextOffset(0f, -20f)
 
             legend.isEnabled = false
             description.isEnabled = false
             setTouchEnabled(false)
-            setDrawEntryLabels(false) // Không hiện chữ trên biểu đồ
+            setDrawEntryLabels(false)
         }
     }
 
     private fun updatePieChart(stats: WeeklyStats) {
-        val entries = stats.moodCounts.map {
-            PieEntry(it.count.toFloat(), it.emotion)
-        }
+        val entries = stats.moodCounts.map { PieEntry(it.count.toFloat(), it.emotion) }
 
         if (entries.isEmpty()) {
             binding.pieChart.clear()
             return
         }
 
-        val dataSet = PieDataSet(entries, "")
-        dataSet.sliceSpace = 2f
-
-        // Map màu
-        val colors = stats.moodCounts.map {
-            ContextCompat.getColor(requireContext(), getMoodColorRes(it.emotion))
+        val dataSet = PieDataSet(entries, "").apply {
+            sliceSpace = 2f
+            colors = stats.moodCounts.map {
+                ContextCompat.getColor(requireContext(), getMoodColorRes(it.emotion))
+            }
         }
-        dataSet.colors = colors
 
-        val data = PieData(dataSet)
-        data.setDrawValues(false)
+        val data = PieData(dataSet).apply {
+            setDrawValues(false)
+        }
 
         binding.pieChart.data = data
         binding.pieChart.animateY(1000)
         binding.pieChart.invalidate()
     }
 
-    // --- 3. LOGIC LINE CHART (BIỂU ĐỒ ĐƯỜNG) ---
-    private fun setupLineChartConfig() {
-        val context = requireContext()
+    // --- LINE CHART LOGIC ---
 
-        // 1. Cấu hình chung cho biểu đồ
-        binding.lineChart.apply {
+    private fun setupLineChartConfig() {
+        val chart = binding.lineChart
+
+        // General Config
+        chart.apply {
             description.isEnabled = false
             legend.isEnabled = false
             setScaleEnabled(false)
             isDragEnabled = false
             setTouchEnabled(true)
-
-            // Tắt lề thừa (Vì Icon đã nằm ở Layout XML bên ngoài)
             minOffset = 0f
             extraLeftOffset = 10f
             extraRightOffset = 20f
             extraBottomOffset = 10f
             extraTopOffset = 10f
-
-            // Quan trọng: Vẽ màu nền nằm DƯỚI đường dữ liệu
-            axisLeft.setDrawLimitLinesBehindData(true)
         }
 
-        // 2. Cấu hình Trục X
-        binding.lineChart.xAxis.apply {
+        // X Axis
+        chart.xAxis.apply {
             position = XAxis.XAxisPosition.BOTTOM
             setDrawGridLines(false)
             setDrawAxisLine(false)
@@ -261,66 +253,26 @@ class WeeklyStatsFragment : Fragment() {
             axisMaximum = 6.5f
         }
 
-        // 3. Cấu hình Trục Y (Trái)
-        val leftAxis = binding.lineChart.axisLeft
-        leftAxis.apply {
+        // Y Axis (Left)
+        val leftAxis = chart.axisLeft.apply {
             axisMinimum = 0.5f
             axisMaximum = 5.5f
             granularity = 1f
             setLabelCount(5, true)
             setDrawLabels(false)
             setDrawAxisLine(false)
-
-            // BẮT BUỘC PHẢI BẬT GridLines ĐỂ KÍCH HOẠT HÀM renderGridLines
-            setDrawGridLines(true)
+            setDrawGridLines(true) // Required for custom renderer
+            setDrawLimitLinesBehindData(true)
         }
 
-        // --- 4. LOGIC TÔ MÀU NỀN (ANONYMOUS CLASS) ---
-        val transformer = binding.lineChart.getTransformer(com.github.mikephil.charting.components.YAxis.AxisDependency.LEFT)
-        val viewPortHandler = binding.lineChart.viewPortHandler
+        // Disable Right Axis
+        chart.axisRight.isEnabled = false
 
-        binding.lineChart.rendererLeftYAxis = object : com.github.mikephil.charting.renderer.YAxisRenderer(viewPortHandler, leftAxis, transformer) {
+        // Custom Renderer for Background Bands
+        setupCustomYAxisRenderer(chart, leftAxis)
 
-            // Chuẩn bị bút vẽ
-            val bgPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                style = android.graphics.Paint.Style.FILL
-            }
-
-            // Danh sách màu
-            val moodColors = listOf(
-                ContextCompat.getColor(context, R.color.emotion_very_dissatisfied),
-                ContextCompat.getColor(context, R.color.emotion_dissatisfied),
-                ContextCompat.getColor(context, R.color.emotion_neutral),
-                ContextCompat.getColor(context, R.color.emotion_satisfied),
-                ContextCompat.getColor(context, R.color.emotion_very_satisfied)
-            )
-
-            override fun renderGridLines(c: android.graphics.Canvas?) {
-                if (c == null) return
-
-                // Lấy vùng hiển thị của biểu đồ
-                val rect = mViewPortHandler.contentRect
-
-                // Vẽ 5 dải màu
-                for (i in 1..5) {
-                    val value = i.toFloat()
-                    val topValue = value + 0.5f
-                    val bottomValue = value - 0.5f
-
-                    val pixelTop = mTrans.getPixelForValues(0f, topValue).y.toFloat()
-                    val pixelBottom = mTrans.getPixelForValues(0f, bottomValue).y.toFloat()
-
-                    // Thiết lập màu và độ trong suốt
-                    bgPaint.color = moodColors[i - 1]
-                    bgPaint.alpha = (255 * 0.2f).toInt() // Độ mờ 20%
-                    c.drawRect(rect.left, pixelTop, rect.right, pixelBottom, bgPaint)
-                }
-            }
-        }
-
-        // 5. Tắt trục Y phải & Sự kiện Click
-        binding.lineChart.axisRight.isEnabled = false
-        binding.lineChart.setOnChartValueSelectedListener(object : OnChartValueSelectedListener {
+        // Click Listener
+        chart.setOnChartValueSelectedListener(object : OnChartValueSelectedListener {
             override fun onValueSelected(e: Entry?, h: Highlight?) {
                 val mood = e?.data as? DailyMood
                 mood?.let {
@@ -332,30 +284,52 @@ class WeeklyStatsFragment : Fragment() {
         })
     }
 
-    private fun adjustAlpha(color: Int, factor: Float): Int {
-        val alpha = Math.round(Color.alpha(color) * factor)
-        val red = Color.red(color)
-        val green = Color.green(color)
-        val blue = Color.blue(color)
-        return Color.argb(alpha, red, green, blue)
+    private fun setupCustomYAxisRenderer(chart: com.github.mikephil.charting.charts.LineChart, yAxis: YAxis) {
+        val transformer = chart.getTransformer(YAxis.AxisDependency.LEFT)
+        val viewPortHandler = chart.viewPortHandler
+        val context = requireContext()
+
+        val moodColors = listOf(
+            ContextCompat.getColor(context, R.color.emotion_very_dissatisfied),
+            ContextCompat.getColor(context, R.color.emotion_dissatisfied),
+            ContextCompat.getColor(context, R.color.emotion_neutral),
+            ContextCompat.getColor(context, R.color.emotion_satisfied),
+            ContextCompat.getColor(context, R.color.emotion_very_satisfied)
+        )
+
+        chart.rendererLeftYAxis = object : YAxisRenderer(viewPortHandler, yAxis, transformer) {
+            val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+            }
+
+            override fun renderGridLines(c: Canvas?) {
+                if (c == null) return
+                val rect = mViewPortHandler.contentRect
+
+                // Draw 5 colored bands
+                for (i in 1..5) {
+                    val topValue = i + 0.5f
+                    val bottomValue = i - 0.5f
+
+                    val pixelTop = mTrans.getPixelForValues(0f, topValue).y.toFloat()
+                    val pixelBottom = mTrans.getPixelForValues(0f, bottomValue).y.toFloat()
+
+                    bgPaint.color = moodColors[i - 1]
+                    bgPaint.alpha = (255 * 0.2f).toInt() // 20% opacity
+                    c.drawRect(rect.left, pixelTop, rect.right, pixelBottom, bgPaint)
+                }
+            }
+        }
     }
 
     private fun updateLineChart(stats: WeeklyStats) {
-        val entries = mutableListOf<Entry>()
+        val entries = stats.dailyMoods.mapNotNull { mood ->
+            val cal = Calendar.getInstance().apply { time = mood.date }
+            val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+            val index = if (dayOfWeek == Calendar.SUNDAY) 6 else dayOfWeek - 2
 
-        stats.dailyMoods.forEach { mood ->
-            val cal = java.util.Calendar.getInstance()
-            cal.time = mood.date
-            val dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK)
-            // Convert CN(1)..T7(7) -> T2(0)..CN(6)
-            val index = if(dayOfWeek == java.util.Calendar.SUNDAY) 6 else dayOfWeek - 2
-
-            if (index in 0..6) {
-                entries.add(Entry(index.toFloat(), mood.score.toFloat(), mood))
-            }
-        }
-
-        entries.sortBy { it.x }
+            if (index in 0..6) Entry(index.toFloat(), mood.score.toFloat(), mood) else null
+        }.sortedBy { it.x }
 
         if (entries.isEmpty()) {
             binding.lineChart.clear()
@@ -363,41 +337,34 @@ class WeeklyStatsFragment : Fragment() {
             return
         }
 
-        val lineDataSet = LineDataSet(entries, "Cảm xúc").apply {
-            // --- THIẾT KẾ ĐƯỜNG VẼ (Sắc nét hơn) ---
-
-            // Dùng màu ĐEN hoặc XÁM ĐẬM cho đường vẽ để nổi bật trên nền màu
+        val dataSet = LineDataSet(entries, "Cảm xúc").apply {
             color = ContextCompat.getColor(requireContext(), R.color.colorPrimary)
-            lineWidth = 3f // Đường dày hơn
-
-            // Thiết kế Điểm (Mốc)
+            lineWidth = 3f
             setDrawCircles(true)
-            setCircleColor(Color.WHITE) // Viền tròn trắng
-            circleHoleColor = ContextCompat.getColor(requireContext(), R.color.colorPrimary) // Lõi tròn màu chính
-            circleRadius = 6f // Điểm to rõ ràng
+            setCircleColor(Color.WHITE)
+            circleHoleColor = ContextCompat.getColor(requireContext(), R.color.colorPrimary)
+            circleRadius = 6f
             circleHoleRadius = 3f
-
-            // Kiểu đường: LINEAR (Thẳng) để thấy rõ sự lên xuống gắt
             mode = LineDataSet.Mode.LINEAR
-            // Hoặc dùng HORIZONTAL_BEZIER nếu muốn cong nhẹ nhưng vẫn rõ bậc
-            // mode = LineDataSet.Mode.HORIZONTAL_BEZIER
-
-            // Hiển thị giá trị trên điểm (Tùy chọn)
             setDrawValues(false)
-
-            // Hiệu ứng Highlight khi click
             highLightColor = Color.RED
             setDrawHighlightIndicators(true)
         }
 
-        binding.lineChart.data = LineData(lineDataSet)
-
-        // Animation khi hiển thị (Vẽ từ trái sang phải)
+        binding.lineChart.data = LineData(dataSet)
         binding.lineChart.animateX(1000)
         binding.lineChart.invalidate()
     }
 
-    // Helper màu sắc
+    // --- HELPERS ---
+
+    private fun showWeekSelectionDialog() {
+        WeekSelectionBottomSheet(viewModel.firstEntryDate) { selectedWeek ->
+            binding.btnSelectWeek.text = selectedWeek.label
+            viewModel.loadWeeklyStats(selectedWeek.startDate)
+        }.show(childFragmentManager, "WeekSelection")
+    }
+
     private fun getMoodColorRes(emotion: String): Int {
         return when (emotion) {
             "Rất tốt" -> R.color.emotion_very_satisfied
@@ -412,16 +379,5 @@ class WeeklyStatsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    private fun android.graphics.drawable.Drawable.toBitmap(): android.graphics.Bitmap {
-        if (this is android.graphics.drawable.BitmapDrawable) {
-            return this.bitmap
-        }
-        val bitmap = createBitmap(intrinsicWidth, intrinsicHeight)
-        val canvas = android.graphics.Canvas(bitmap)
-        setBounds(0, 0, canvas.width, canvas.height)
-        draw(canvas)
-        return bitmap
     }
 }

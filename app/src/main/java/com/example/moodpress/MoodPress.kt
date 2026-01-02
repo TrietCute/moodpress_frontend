@@ -12,7 +12,6 @@ class MoodPress() : Application() {
         super.onCreate()
         createNotificationChannel()
 
-        // Khởi tạo Cloudinary
         val config = HashMap<String, String>()
         config["cloud_name"] = BuildConfig.CLOUD_NAME
         config["api_key"] = BuildConfig.CLOUD_API_KEY

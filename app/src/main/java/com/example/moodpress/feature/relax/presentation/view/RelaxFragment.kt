@@ -29,7 +29,6 @@ class RelaxFragment : Fragment(R.layout.fragment_relax) {
     private var isBound = false
     private lateinit var adapter: RelaxSoundAdapter
 
-    // Kết nối tới Service
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             val binder = service as SoundMixerService.LocalBinder
@@ -53,7 +52,6 @@ class RelaxFragment : Fragment(R.layout.fragment_relax) {
 
     override fun onStart() {
         super.onStart()
-        // Bind Service khi màn hình hiện lên
         Intent(requireContext(), SoundMixerService::class.java).also { intent ->
             requireContext().bindService(intent, connection, Context.BIND_AUTO_CREATE)
         }
@@ -93,13 +91,21 @@ class RelaxFragment : Fragment(R.layout.fragment_relax) {
     }
 
     private fun syncUIWithService() {
-        if (!isBound || soundService == null) return
+        if (soundService == null) return
+
+        val isPlayingAny = soundService!!.activePlayers.isNotEmpty()
+        val isPaused = soundService!!.isPaused
 
         val currentList = viewModel.sounds.value
         currentList.forEach { sound ->
-            sound.isPlaying = soundService!!.isPlaying(sound.audioUrl)
+            if (!isPlayingAny) {
+                sound.isPlaying = false
+            } else {
+                sound.isPlaying = soundService!!.isPlaying(sound.audioUrl)
+            }
         }
         adapter.submitList(currentList)
+        adapter.notifyDataSetChanged()
     }
 
     override fun onDestroyView() {

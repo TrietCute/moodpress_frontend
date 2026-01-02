@@ -8,13 +8,15 @@ import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.moodpress.R
 import com.example.moodpress.databinding.FragmentHomeBinding
-import com.example.moodpress.feature.home.domain.model.CalendarDay // (Kiểm tra import)
+import com.example.moodpress.feature.home.domain.model.CalendarDay
 import com.example.moodpress.feature.home.presentation.viewmodel.HomeUiState
 import com.example.moodpress.feature.home.presentation.viewmodel.HomeViewModel
 import com.example.moodpress.feature.journal.domain.model.JournalEntry
@@ -24,8 +26,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Locale
 import java.util.Date
+import java.util.Locale
 
 @AndroidEntryPoint
 class HomeFragment : Fragment(),
@@ -39,13 +41,11 @@ class HomeFragment : Fragment(),
     private val viewModel: HomeViewModel by viewModels()
 
     private var isListView = true
-
-    private lateinit var journalListAdapter: JournalListAdapter
-    private lateinit var calendarAdapter: CalendarAdapter
-
     private var entryToActOn: JournalEntry? = null
     private var fullJournalList: List<JournalEntry> = emptyList()
 
+    private val journalListAdapter by lazy { JournalListAdapter(this) }
+    private val calendarAdapter by lazy { CalendarAdapter { day -> onDayClicked(day) } }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -69,108 +69,79 @@ class HomeFragment : Fragment(),
     }
 
     private fun setupRecyclerViews() {
-        journalListAdapter = JournalListAdapter(this)
-        binding.journalListRecyclerView.adapter = journalListAdapter
-        binding.journalListRecyclerView.layoutManager = LinearLayoutManager(requireContext())
-
-        calendarAdapter = CalendarAdapter { day ->
-            onDayClicked(day)
+        with(binding.journalListRecyclerView) {
+            adapter = journalListAdapter
+            layoutManager = LinearLayoutManager(requireContext())
         }
-        binding.journalCalendarRecyclerView.adapter = calendarAdapter
-        binding.journalCalendarRecyclerView.layoutManager = GridLayoutManager(requireContext(), 7)
+
+        with(binding.journalCalendarRecyclerView) {
+            adapter = calendarAdapter
+            layoutManager = GridLayoutManager(requireContext(), 7)
+        }
     }
 
     private fun setupClickListeners() {
-        binding.datePickerButton.setOnClickListener {
-            showMonthYearPicker()
-        }
-        binding.viewToggleButton.setOnClickListener {
-            isListView = !isListView
-            updateViewVisibility()
-            if (isListView) {
-                resetListFilter()
+        with(binding) {
+            datePickerButton.setOnClickListener {
+                showMonthYearPicker()
             }
-        }
-        binding.fabAddJournal.setOnClickListener {
-            safeNavigate(HomeFragmentDirections.actionHomeFragmentToCreateJournalFragment(null, -1L))
+            viewToggleButton.setOnClickListener {
+                isListView = !isListView
+                updateViewVisibility()
+                if (isListView) resetListFilter()
+            }
+            fabAddJournal.setOnClickListener {
+                safeNavigate(HomeFragmentDirections.actionHomeFragmentToCreateJournalFragment(null, -1L))
+            }
         }
     }
 
     private fun observeViewModel() {
-        lifecycleScope.launch {
-            viewModel.uiState.collect { state ->
-                when (state) {
-                    is HomeUiState.Success -> {
-                        fullJournalList = state.journalList
-
-                        // Cập nhật List Adapter
-                        journalListAdapter.submitList(state.journalList)
-
-                        calendarAdapter.updateDays(state.calendarDays)
-                    }
-                    is HomeUiState.Error -> {
-                        Toast.makeText(requireContext(), state.message, Toast.LENGTH_LONG).show()
-                    }
-                    is HomeUiState.Loading -> {
-                        // (Hiển thị ProgressBar...)
-                    }
-                }
-            }
-        }
-
-        // Lắng nghe ngày tháng được chọn (để cập nhật nút)
-        lifecycleScope.launch {
-            viewModel.selectedDate.collect { calendar ->
-                updateDateButtonText(calendar)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { observeUiState() }
+                launch { observeSelectedDate() }
             }
         }
     }
 
-    private fun safeNavigate(directions: androidx.navigation.NavDirections) {
-        val navController = findNavController()
-        if (navController.currentDestination?.id == R.id.nav_home) {
-            navController.navigate(directions)
+    private suspend fun observeUiState() {
+        viewModel.uiState.collect { state ->
+            when (state) {
+                is HomeUiState.Success -> {
+                    fullJournalList = state.journalList
+                    journalListAdapter.submitList(state.journalList)
+                    calendarAdapter.updateDays(state.calendarDays)
+                }
+                is HomeUiState.Error -> {
+                    Toast.makeText(requireContext(), state.message, Toast.LENGTH_LONG).show()
+                }
+                is HomeUiState.Loading -> {
+                    // Handle loading state if needed
+                }
+            }
+        }
+    }
+
+    private suspend fun observeSelectedDate() {
+        viewModel.selectedDate.collect { calendar ->
+            val sdf = SimpleDateFormat("MMMM, yyyy", Locale("vi", "VN"))
+            binding.datePickerButton.text = sdf.format(calendar.time)
         }
     }
 
     private fun updateViewVisibility() {
-        if (isListView) {
-            binding.journalListRecyclerView.isVisible = true
-            binding.calendarContainer.isVisible = false
-            binding.viewToggleButton.setImageResource(R.drawable.ic_view_list)
-        } else {
-            binding.journalListRecyclerView.isVisible = false
-            binding.calendarContainer.isVisible = true
-            binding.viewToggleButton.setImageResource(R.drawable.ic_calendar)
+        with(binding) {
+            journalListRecyclerView.isVisible = isListView
+            calendarContainer.isVisible = !isListView
+            viewToggleButton.setImageResource(
+                if (isListView) R.drawable.ic_view_list else R.drawable.ic_calendar
+            )
         }
-    }
-
-    private fun resetListFilter() {
-        if (journalListAdapter.currentList != fullJournalList) {
-            journalListAdapter.submitList(fullJournalList)
-        }
-    }
-
-    private fun updateDateButtonText(calendar: Calendar) {
-        val sdf = SimpleDateFormat("MMMM, yyyy", Locale("vi", "VN"))
-        val formattedDate = sdf.format(calendar.time)
-        binding.datePickerButton.text = formattedDate
-    }
-
-    private fun showMonthYearPicker() {
-        val currentCal = viewModel.selectedDate.value
-        val dialog = MonthYearPickerDialog(
-            initialYear = currentCal.get(Calendar.YEAR),
-            initialMonth = currentCal.get(Calendar.MONTH), // 0-11
-            listener = this
-        )
-        dialog.show(childFragmentManager, "MONTH_YEAR_PICKER")
     }
 
     private fun onDayClicked(day: CalendarDay) {
-        if (!day.isCurrentMonth) {
-            return
-        }
+        if (!day.isCurrentMonth) return
 
         if (!isPastOrToday(day.date)) {
             Toast.makeText(requireContext(), "Không thể tạo nhật ký cho tương lai", Toast.LENGTH_SHORT).show()
@@ -184,14 +155,27 @@ class HomeFragment : Fragment(),
             )
             safeNavigate(action)
         } else {
-            val filteredList = fullJournalList.filter {
-                isSameDay(it.timestamp, day.date)
-            }
+            val filteredList = fullJournalList.filter { isSameDay(it.timestamp, day.date) }
             journalListAdapter.submitList(filteredList)
-
             isListView = true
             updateViewVisibility()
         }
+    }
+
+    private fun isPastOrToday(date: Date): Boolean {
+        val today = Calendar.getInstance().apply { stripTime() }
+        val selected = Calendar.getInstance().apply {
+            time = date
+            stripTime()
+        }
+        return !selected.after(today)
+    }
+
+    private fun Calendar.stripTime() {
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
     }
 
     private fun isSameDay(date1: Date, date2: Date): Boolean {
@@ -201,35 +185,38 @@ class HomeFragment : Fragment(),
                 cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
     }
 
-    private fun isPastOrToday(date: Date): Boolean {
-        val today = Calendar.getInstance()
-        val selected = Calendar.getInstance().apply { time = date }
-
-        // Reset giờ của "hôm nay" về 00:00:00
-        today.set(Calendar.HOUR_OF_DAY, 0)
-        today.set(Calendar.MINUTE, 0)
-        today.set(Calendar.SECOND, 0)
-        today.set(Calendar.MILLISECOND, 0)
-
-        selected.set(Calendar.HOUR_OF_DAY, 0)
-        selected.set(Calendar.MINUTE, 0)
-        selected.set(Calendar.SECOND, 0)
-        selected.set(Calendar.MILLISECOND, 0)
-
-        return !selected.after(today)
+    private fun showMonthYearPicker() {
+        val currentCal = viewModel.selectedDate.value
+        MonthYearPickerDialog(
+            initialYear = currentCal.get(Calendar.YEAR),
+            initialMonth = currentCal.get(Calendar.MONTH),
+            listener = this
+        ).show(childFragmentManager, "MONTH_YEAR_PICKER")
     }
 
-    // --- CÁC HÀM CALLBACK (Lắng nghe sự kiện) ---
+    private fun safeNavigate(directions: androidx.navigation.NavDirections) {
+        val navController = findNavController()
+        if (navController.currentDestination?.id == R.id.nav_home) {
+            navController.navigate(directions)
+        }
+    }
 
-    override fun onMonthYearSelected(year: Int, month: Int) { // month (0-11)
+    private fun resetListFilter() {
+        if (journalListAdapter.currentList != fullJournalList) {
+            journalListAdapter.submitList(fullJournalList)
+        }
+    }
+
+    // --- INTERFACE IMPLEMENTATIONS ---
+
+    override fun onMonthYearSelected(year: Int, month: Int) {
         viewModel.updateSelectedDate(year, month)
         resetListFilter()
     }
 
     override fun onMoreOptionsClicked(entry: JournalEntry) {
         this.entryToActOn = entry
-        val bottomSheet = JournalOptionsBottomSheet()
-        bottomSheet.show(childFragmentManager, JournalOptionsBottomSheet.TAG)
+        JournalOptionsBottomSheet().show(childFragmentManager, JournalOptionsBottomSheet.TAG)
     }
 
     override fun onEditClicked() {

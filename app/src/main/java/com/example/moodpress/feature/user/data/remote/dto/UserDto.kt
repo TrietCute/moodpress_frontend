@@ -3,7 +3,6 @@ package com.example.moodpress.feature.user.data.remote.dto
 import com.example.moodpress.feature.user.domain.model.UserProfile
 import java.util.Date
 
-// 1. DTO để GỬI YÊU CẦU (Request)
 data class UserProfileUpdateRequestDto(
     val name: String?,
     val gender: String?,
@@ -11,7 +10,6 @@ data class UserProfileUpdateRequestDto(
 
 )
 
-// 2. DTO để NHẬN PHẢN HỒI (Response)
 data class UserProfileResponseDto(
     val _id: String,
     val name: String?,
@@ -27,11 +25,10 @@ data class GoogleLinkRequestDto(
 
 data class GoogleLinkResponseDto(
     val message: String,
-    val new_id: String, // Đây là Google ID mới
+    val new_id: String,
     val email: String?
 )
 
-// 3. Hàm Mapper để chuyển đổi DTO (Data) sang Model (Domain)
 fun UserProfileResponseDto.toDomain(): UserProfile {
     return UserProfile(
         id = this._id,

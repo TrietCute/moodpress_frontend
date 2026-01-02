@@ -2,21 +2,21 @@ package com.example.moodpress.feature.chatbot.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.moodpress.feature.chatbot.data.remote.api.ChatApiService
 import com.example.moodpress.feature.chatbot.data.remote.dto.ChatRequestDto
+import com.example.moodpress.feature.chatbot.data.remote.dto.UserInfo
 import com.example.moodpress.feature.chatbot.data.repository.ChatRepository
 import com.example.moodpress.feature.chatbot.domain.model.ChatMessage
-import com.example.moodpress.feature.chatbot.data.remote.dto.UserInfo
 import com.example.moodpress.feature.user.data.repository.UserRepository
-import dagger.Provides
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -25,10 +25,13 @@ class ChatViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
-    val messages: StateFlow<List<ChatMessage>> = _messages
+    val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    // Cache formatter để tránh khởi tạo nhiều lần
+    private val isoDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.getDefault())
 
     init {
         addMessage(ChatMessage("Chào bạn! Mình là trợ lý cảm xúc. Hôm nay bạn thế nào?", isUser = false))
@@ -42,14 +45,12 @@ class ChatViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
+                // 1. Chuẩn bị dữ liệu User Info
                 val currentUser = userRepository.getUserProfile()
-
-                val birthDateString = formatDateToIso(currentUser.birth)
-
                 val userInfo = UserInfo(
                     name = currentUser.name ?: "Bạn",
                     gender = currentUser.gender ?: "Bạn",
-                    birth_date = birthDateString
+                    birth_date = formatDateToIso(currentUser.birth)
                 )
 
                 val request = ChatRequestDto(
@@ -57,49 +58,53 @@ class ChatViewModel @Inject constructor(
                     user_info = userInfo
                 )
 
+                // 2. Gọi API
                 val botResponse = chatRepository.sendMessage(request)
                 addMessage(botResponse)
+
             } catch (e: Exception) {
-                e.printStackTrace()
-                addMessage(ChatMessage("Lỗi: ${e.message}", isUser = false))
+                addMessage(ChatMessage("Lỗi kết nối: ${e.message}", isUser = false))
             } finally {
                 _isLoading.value = false
             }
         }
-    }
-
-    private fun formatDateToIso(date: Date?): String {
-        if (date == null) return ""
-        return try {
-            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.getDefault())
-            sdf.format(date)
-        } catch (e: Exception) {
-            ""
-        }
-    }
-
-    private fun addMessage(msg: ChatMessage) {
-        val currentList = _messages.value.toMutableList()
-        currentList.add(msg)
-        _messages.value = currentList
     }
 
     fun startNewConversation() {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
+                // Reset UI
                 _messages.value = emptyList()
-                _isLoading.value = true
 
-                // 2. Gọi API Xóa Context trên Server
-                //chatRepository.clearHistory()
+                // TODO: Nếu sau này có API clear context phía server thì gọi ở đây
+                // chatRepository.clearHistory()
 
                 addMessage(ChatMessage("Đã làm mới cuộc trò chuyện! Bạn muốn tâm sự gì nào?", isUser = false))
-
             } catch (e: Exception) {
-                addMessage(ChatMessage("Lỗi khi xóa bộ nhớ: ${e.message}", isUser = false))
+                addMessage(ChatMessage("Có lỗi xảy ra: ${e.message}", isUser = false))
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+
+    private fun addMessage(msg: ChatMessage) {
+        // Cách update list trong StateFlow an toàn và ngắn gọn
+        _messages.update { currentList ->
+            currentList + msg
+        }
+    }
+
+    private fun formatDateToIso(date: Date?): String {
+        return if (date != null) {
+            try {
+                isoDateFormat.format(date)
+            } catch (e: Exception) {
+                ""
+            }
+        } else {
+            ""
         }
     }
 }

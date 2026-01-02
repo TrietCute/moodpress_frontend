@@ -3,7 +3,6 @@ package com.example.moodpress.feature.stats.presentation.view.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -33,29 +32,28 @@ class MonthlyCalendarAdapter : ListAdapter<MonthDayUiModel, MonthlyCalendarAdapt
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: MonthDayUiModel) {
-            // 1. Xử lý ô trống (padding đầu tháng)
-            if (item.dayValue.isEmpty()) {
-                binding.root.visibility = View.INVISIBLE
-                return
+            with(binding) {
+                // 1. Handle Empty Cells (Padding days)
+                if (item.dayValue.isEmpty()) {
+                    root.visibility = View.INVISIBLE
+                    return
+                }
+                root.visibility = View.VISIBLE
+
+                // 2. Set Day Text
+                tvDay.text = item.dayValue
+
+                // 3. Set Mood Icon
+                if (item.emotion != null) {
+                    imgMarker.visibility = View.VISIBLE
+                    imgMarker.setImageResource(getMoodIconRes(item.emotion))
+                } else {
+                    imgMarker.visibility = View.INVISIBLE
+                }
+
+                // 4. Handle Dimming Filter
+                root.alpha = if (item.isDimmed) 0.3f else 1.0f
             }
-            binding.root.visibility = View.VISIBLE
-
-            // LUÔN LUÔN HIỂN THỊ SỐ NGÀY
-            binding.tvDay.text = item.dayValue
-            binding.tvDay.visibility = View.VISIBLE
-
-            // 2. Xử lý hiển thị Icon Cảm xúc
-            if (item.emotion != null) {
-                // Có nhật ký -> Hiện Icon
-                binding.imgMarker.visibility = View.VISIBLE
-                val iconRes = getMoodIconRes(item.emotion)
-                binding.imgMarker.setImageResource(iconRes)
-            } else {
-                binding.imgMarker.visibility = View.INVISIBLE
-            }
-
-            // 3. Xử lý Bộ lọc (Làm mờ)
-            binding.root.alpha = if (item.isDimmed) 0.3f else 1.0f
         }
 
         private fun getMoodIconRes(emotion: String): Int {
@@ -72,8 +70,10 @@ class MonthlyCalendarAdapter : ListAdapter<MonthDayUiModel, MonthlyCalendarAdapt
 
     class DiffCallback : DiffUtil.ItemCallback<MonthDayUiModel>() {
         override fun areItemsTheSame(oldItem: MonthDayUiModel, newItem: MonthDayUiModel): Boolean {
+            // For calendar days, dayValue is unique enough (except for empty padding)
             return oldItem.dayValue == newItem.dayValue
         }
+
         override fun areContentsTheSame(oldItem: MonthDayUiModel, newItem: MonthDayUiModel): Boolean {
             return oldItem == newItem
         }

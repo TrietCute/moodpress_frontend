@@ -1,4 +1,4 @@
-package com.example.moodpress.features.settings.presentation.viewmodel
+package com.example.moodpress.feature.settings.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -6,10 +6,10 @@ import com.example.moodpress.core.utils.SessionManager
 import com.example.moodpress.feature.user.data.repository.UserRepository
 import com.example.moodpress.feature.user.domain.model.UserProfile
 import com.example.moodpress.feature.user.domain.usecase.GetUserProfileUseCase
-// (Giả sử bạn đã thêm hàm linkGoogleAccount vào UserRepository)
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -29,7 +29,7 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _linkState = MutableStateFlow<LinkAccountState>(LinkAccountState.Idle)
-    val linkState: StateFlow<LinkAccountState> = _linkState
+    val linkState: StateFlow<LinkAccountState> = _linkState.asStateFlow()
 
     init {
         checkCurrentLinkStatus()
@@ -39,23 +39,22 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val profile = getUserProfileUseCase()
-                // Nếu profile có email, nghĩa là đã liên kết Google
                 if (!profile.email.isNullOrEmpty()) {
                     _linkState.value = LinkAccountState.Linked(profile)
                 }
-            } catch (e: Exception) {
-                // Bỏ qua lỗi
+            } catch (_: Exception) {
+                // Fail silently on init check
             }
         }
     }
 
     fun linkGoogleAccount(idToken: String) {
-        _linkState.value = LinkAccountState.Loading
-
         viewModelScope.launch {
+            _linkState.value = LinkAccountState.Loading
             try {
                 val newUserId = userRepository.linkGoogleAccount(idToken)
                 sessionManager.saveUserId(newUserId)
+
                 val profile = getUserProfileUseCase()
                 _linkState.value = LinkAccountState.Success(profile)
             } catch (e: Exception) {

@@ -11,7 +11,6 @@ import retrofit2.http.PUT
 
 interface UserApiService {
 
-    // Endpoint: PUT /user/profile
     @PUT("user/profile")
     suspend fun updateUserProfile(
         @Body request: UserProfileUpdateRequestDto

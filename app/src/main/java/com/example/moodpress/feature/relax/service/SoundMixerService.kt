@@ -28,8 +28,9 @@ import java.net.URL
 class SoundMixerService : Service() {
 
     private val binder = LocalBinder()
-    var onStateChanged: ((Boolean) -> Unit)? = null
-    private val activePlayers = HashMap<String, MediaPlayer>()
+    var isPaused = false
+    var onStateChanged: ((Boolean, Boolean) -> Unit)? = null
+    val activePlayers = HashMap<String, MediaPlayer>()
     private val serviceScope = CoroutineScope(Dispatchers.Main + Job())
 
     companion object {
@@ -53,6 +54,7 @@ class SoundMixerService : Service() {
     fun isPlayingAny(): Boolean = activePlayers.isNotEmpty()
 
     fun toggleSound(sound: RelaxSound) {
+        if (isPaused) resumeAll()
         if (activePlayers.containsKey(sound.audioUrl)) {
             stopPlayer(sound.audioUrl)
             sound.isPlaying = false
@@ -60,16 +62,33 @@ class SoundMixerService : Service() {
             playPlayer(sound)
             sound.isPlaying = true
         }
-
         updateNotification()
         notifyStateChange()
     }
 
     private fun notifyStateChange() {
-        onStateChanged?.invoke(activePlayers.isNotEmpty())
+        onStateChanged?.invoke(activePlayers.isNotEmpty(), isPaused)
     }
 
-    suspend fun downloadFile(context: Context, url: String, fileName: String): String? {
+    fun pauseAll() {
+        if (activePlayers.isNotEmpty() && !isPaused) {
+            activePlayers.values.forEach { if (it.isPlaying) it.pause() }
+            isPaused = true
+            updateNotification()
+            notifyStateChange()
+        }
+    }
+
+    fun resumeAll() {
+        if (activePlayers.isNotEmpty() && isPaused) {
+            activePlayers.values.forEach { it.start() }
+            isPaused = false
+            updateNotification()
+            notifyStateChange()
+        }
+    }
+
+    private suspend fun downloadFile(context: Context, url: String, fileName: String): String? {
         return withContext(Dispatchers.IO) {
             try {
                 val file = File(context.cacheDir, fileName)
@@ -152,8 +171,8 @@ class SoundMixerService : Service() {
             it.release()
         }
         activePlayers.clear()
+        isPaused = false
         stopForeground(STOP_FOREGROUND_REMOVE)
-        //stopSelf()
         notifyStateChange()
     }
 

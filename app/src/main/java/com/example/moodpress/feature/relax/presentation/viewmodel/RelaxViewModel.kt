@@ -25,11 +25,18 @@ class RelaxViewModel @Inject constructor(
         fetchSounds()
     }
 
+    fun resetAllSoundsUI() {
+        val currentList = _sounds.value.toMutableList()
+        currentList.forEach {
+            it.isPlaying = false
+        }
+        _sounds.value = currentList
+    }
+
     private fun fetchSounds() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Gọi API lấy danh sách
                 val list = apiService.getRelaxSounds()
                 _sounds.value = list
             } catch (e: Exception) {

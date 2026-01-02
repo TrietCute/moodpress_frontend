@@ -11,8 +11,6 @@ class DeleteJournalUseCase @Inject constructor(
         if (id.isBlank()) {
             throw IllegalArgumentException("ID nhật ký không được để trống.")
         }
-
-        // Chỉ cần gọi, không cần trả về
         repository.deleteJournal(id)
     }
 }

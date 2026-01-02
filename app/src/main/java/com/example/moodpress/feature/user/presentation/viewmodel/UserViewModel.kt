@@ -11,8 +11,8 @@ import java.util.Date
 import javax.inject.Inject
 
 sealed class UserUpdateState {
-    object Idle : UserUpdateState()
-    object Loading : UserUpdateState()
+    data object Idle : UserUpdateState()
+    data object Loading : UserUpdateState()
     data class Success(val userName: String) : UserUpdateState()
     data class Error(val message: String) : UserUpdateState()
 }

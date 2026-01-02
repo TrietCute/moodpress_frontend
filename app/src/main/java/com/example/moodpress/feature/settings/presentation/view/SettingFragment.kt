@@ -1,7 +1,6 @@
 package com.example.moodpress.feature.settings.presentation.view
 
 import android.Manifest
-import android.app.TimePickerDialog
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -13,7 +12,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.example.moodpress.R
@@ -22,8 +23,8 @@ import com.example.moodpress.core.utils.NotificationScheduler
 import com.example.moodpress.core.utils.SessionManager
 import com.example.moodpress.databinding.FragmentSettingsBinding
 import com.example.moodpress.feature.user.domain.model.UserProfile
-import com.example.moodpress.features.settings.presentation.viewmodel.LinkAccountState
-import com.example.moodpress.features.settings.presentation.viewmodel.SettingsViewModel
+import com.example.moodpress.feature.settings.presentation.viewmodel.LinkAccountState
+import com.example.moodpress.feature.settings.presentation.viewmodel.SettingsViewModel
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import dagger.hilt.android.AndroidEntryPoint
@@ -45,20 +46,18 @@ class SettingsFragment : Fragment() {
     @Inject
     lateinit var notificationScheduler: NotificationScheduler
 
+    private val viewModel: SettingsViewModel by viewModels()
+
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            // Quyền được cấp -> Bật switch và lưu
             saveAndScheduleNotification(true)
         } else {
-            // Quyền bị từ chối -> Tắt switch
             binding.switchNotification.isChecked = false
-            Toast.makeText(context, "Cần cấp quyền để nhận thông báo", Toast.LENGTH_SHORT).show()
+            showToast("Cần cấp quyền để nhận thông báo")
         }
     }
-
-    private val viewModel: SettingsViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -70,7 +69,6 @@ class SettingsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         setupUI()
         setupNotificationUI()
         setupClickListeners()
@@ -83,79 +81,78 @@ class SettingsFragment : Fragment() {
     }
 
     private fun setupClickListeners() {
-        // 1. Nút Chỉnh sửa thông tin
-        binding.buttonEditProfile.setOnClickListener {
-            findNavController().navigate(R.id.action_settingsFragment_to_editProfileFragment)
-        }
+        with(binding) {
+            buttonEditProfile.setOnClickListener {
+                findNavController().navigate(R.id.action_settingsFragment_to_editProfileFragment)
+            }
 
-        // 2. Nút Liên kết tài khoản
-        binding.buttonLinkAccount.setOnClickListener {
-            performGoogleLink()
+            buttonLinkAccount.setOnClickListener {
+                performGoogleLink()
+            }
         }
     }
 
     private fun performGoogleLink() {
         lifecycleScope.launch {
-            // Gọi hộp thoại Google Sign-In
             val idToken = googleAuthManager.signIn()
-
             if (idToken != null) {
-                // Nếu lấy được token, gọi ViewModel để gửi lên server
                 viewModel.linkGoogleAccount(idToken)
             } else {
-                Toast.makeText(context, "Hủy đăng nhập hoặc lỗi", Toast.LENGTH_SHORT).show()
+                showToast("Hủy đăng nhập hoặc lỗi")
             }
         }
     }
 
     private fun observeViewModel() {
-        lifecycleScope.launch {
-            viewModel.linkState.collect { state ->
-                when (state) {
-                    is LinkAccountState.Loading -> {
-                        // Bạn có thể hiện ProgressBar ở đây
-                        // binding.progressBar.isVisible = true
-                        binding.buttonLinkAccount.isEnabled = false
-                        Toast.makeText(context, "Đang liên kết...", Toast.LENGTH_SHORT).show()
-                    }
-                    is LinkAccountState.Success -> {
-                        binding.buttonLinkAccount.isEnabled = true
-
-                        Toast.makeText(context, "Liên kết thành công! Dữ liệu của bạn đã an toàn.", Toast.LENGTH_LONG).show()
-
-                        showGoogleInfo(state.profile)
-                    }
-                    is LinkAccountState.Linked -> {
-                        showGoogleInfo(state.profile)
-                    }
-                    is LinkAccountState.Error -> {
-                        binding.buttonLinkAccount.isEnabled = true
-                        binding.buttonLinkAccount.alpha = 1.0f
-                        Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
-                    }
-                    is LinkAccountState.Idle -> {
-                        binding.cardGoogleInfo.visibility = View.GONE
-                        binding.buttonLinkAccount.visibility = View.VISIBLE
-                    }
-
-                    else -> {}
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.linkState.collect { state ->
+                    handleLinkState(state)
                 }
             }
         }
     }
 
+    private fun handleLinkState(state: LinkAccountState) {
+        when (state) {
+            is LinkAccountState.Loading -> {
+                binding.buttonLinkAccount.isEnabled = false
+                showToast("Đang liên kết...")
+            }
+            is LinkAccountState.Success -> {
+                binding.buttonLinkAccount.isEnabled = true
+                showToast("Liên kết thành công! Dữ liệu của bạn đã an toàn.")
+                showGoogleInfo(state.profile)
+            }
+            is LinkAccountState.Linked -> {
+                showGoogleInfo(state.profile)
+            }
+            is LinkAccountState.Error -> {
+                binding.buttonLinkAccount.isEnabled = true
+                showToast(state.message)
+            }
+            is LinkAccountState.Idle -> {
+                binding.cardGoogleInfo.visibility = View.GONE
+                binding.buttonLinkAccount.visibility = View.VISIBLE
+            }
+
+            else -> {}
+        }
+    }
+
     private fun showGoogleInfo(profile: UserProfile) {
-        binding.cardGoogleInfo.visibility = View.VISIBLE
+        with(binding) {
+            cardGoogleInfo.visibility = View.VISIBLE
+            tvGoogleName.text = profile.name ?: "Người dùng"
+            tvGoogleEmail.text = profile.email ?: ""
 
-        binding.tvGoogleName.text = profile.name ?: "Người dùng"
-        binding.tvGoogleEmail.text = profile.email ?: ""
-
-        if (!profile.picture.isNullOrEmpty()) {
-            Glide.with(this)
-                .load(profile.picture)
-                .placeholder(R.drawable.ic_emotion_satisfied)
-                .error(R.drawable.ic_emotion_satisfied)
-                .into(binding.imgGoogleAvatar)
+            if (!profile.picture.isNullOrEmpty()) {
+                Glide.with(this@SettingsFragment)
+                    .load(profile.picture)
+                    .placeholder(R.drawable.ic_emotion_satisfied)
+                    .error(R.drawable.ic_emotion_satisfied)
+                    .into(imgGoogleAvatar)
+            }
         }
     }
 
@@ -163,31 +160,39 @@ class SettingsFragment : Fragment() {
         val isEnabled = sessionManager.isNotificationEnabled()
         val (hour, minute) = sessionManager.getNotificationTime()
 
-        binding.switchNotification.isChecked = isEnabled
-        updateTimeText(hour, minute)
+        with(binding) {
+            switchNotification.isChecked = isEnabled
+            updateTimeText(hour, minute)
+            updateTimePickerState(isEnabled)
 
-        binding.layoutTimePicker.alpha = if (isEnabled) 1.0f else 0.5f
-        binding.layoutTimePicker.isEnabled = isEnabled
-
-        binding.switchNotification.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                checkPermissionAndEnable()
-            } else {
-                saveAndScheduleNotification(false)
+            switchNotification.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    checkPermissionAndEnable()
+                } else {
+                    saveAndScheduleNotification(false)
+                }
+                updateTimePickerState(isChecked)
             }
 
-            binding.layoutTimePicker.alpha = if (isChecked) 1.0f else 0.5f
-            binding.layoutTimePicker.isEnabled = isChecked
+            layoutTimePicker.setOnClickListener {
+                showTimePicker()
+            }
         }
+    }
 
-        binding.layoutTimePicker.setOnClickListener {
-            showTimePicker()
-        }
+    private fun updateTimePickerState(isEnabled: Boolean) {
+        binding.layoutTimePicker.alpha = if (isEnabled) 1.0f else 0.5f
+        binding.layoutTimePicker.isEnabled = isEnabled
     }
 
     private fun checkPermissionAndEnable() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (hasPermission) {
                 saveAndScheduleNotification(true)
             } else {
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -211,7 +216,6 @@ class SettingsFragment : Fragment() {
     private fun showTimePicker() {
         val (currentHour, currentMinute) = sessionManager.getNotificationTime()
 
-        // 1. Tạo MaterialTimePicker
         val picker = MaterialTimePicker.Builder()
             .setTimeFormat(TimeFormat.CLOCK_24H)
             .setHour(currentHour)
@@ -231,17 +235,19 @@ class SettingsFragment : Fragment() {
             if (isEnabled) {
                 notificationScheduler.cancelReminder()
                 notificationScheduler.scheduleReminder(newHour, newMinute)
-                Toast.makeText(context, "Đã cập nhật giờ nhắc: ${String.format("%02d:%02d", newHour, newMinute)}", Toast.LENGTH_SHORT).show()
+                showToast("Đã cập nhật giờ nhắc: ${String.format("%02d:%02d", newHour, newMinute)}")
             }
         }
 
-        // 3. Hiển thị (Dùng childFragmentManager)
         picker.show(childFragmentManager, "tag_time_picker")
     }
 
     private fun updateTimeText(hour: Int, minute: Int) {
-        val timeString = String.format("%02d:%02d", hour, minute)
-        binding.tvNotificationTime.text = timeString
+        binding.tvNotificationTime.text = String.format("%02d:%02d", hour, minute)
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {

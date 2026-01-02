@@ -14,7 +14,6 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
 import javax.inject.Inject
-import java.util.Date
 
 sealed class HomeUiState {
     data object Loading : HomeUiState()
@@ -31,11 +30,9 @@ class HomeViewModel @Inject constructor(
     private val deleteJournalUseCase: DeleteJournalUseCase
 ) : ViewModel() {
 
-    // 1. State để lưu trữ tháng/năm đang chọn
     private val _selectedDate = MutableStateFlow(Calendar.getInstance())
     val selectedDate: StateFlow<Calendar> = _selectedDate.asStateFlow()
 
-    // 2. State để gửi cho UI
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -44,9 +41,8 @@ class HomeViewModel @Inject constructor(
     }
 
     fun loadDataForCurrentMonth() {
-        val year = _selectedDate.value.get(Calendar.YEAR)
-        val month = _selectedDate.value.get(Calendar.MONTH) + 1
-        loadData(year, month)
+        val cal = _selectedDate.value
+        loadData(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1)
     }
 
     fun updateSelectedDate(year: Int, month: Int) {
@@ -61,15 +57,11 @@ class HomeViewModel @Inject constructor(
         _uiState.value = HomeUiState.Loading
         viewModelScope.launch {
             try {
-                // 1. Lấy dữ liệu thô từ UseCase (gọi API)
                 val entries = getJournalHistoryUseCase(year, month)
-
-                // 2. Xử lý dữ liệu cho Calendar
                 val calendarDays = generateCalendarDays(year, month, entries)
 
-                // 3. Gửi 2 danh sách về cho UI
                 _uiState.value = HomeUiState.Success(
-                    journalList = entries.sortedByDescending { it.timestamp }, // Sắp xếp cho List
+                    journalList = entries.sortedByDescending { it.timestamp },
                     calendarDays = calendarDays
                 )
             } catch (e: Exception) {
@@ -82,7 +74,6 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 deleteJournalUseCase(id)
-                // Tải lại dữ liệu cho tháng hiện tại
                 loadDataForCurrentMonth()
             } catch (e: Exception) {
                 _uiState.value = HomeUiState.Error(e.message ?: "Lỗi khi xóa")
@@ -92,61 +83,50 @@ class HomeViewModel @Inject constructor(
 
     private fun generateCalendarDays(
         year: Int,
-        month: Int, // (1-12)
+        month: Int,
         entries: List<JournalEntry>
     ): List<CalendarDay> {
-
-        // A. Map dữ liệu (Ngày -> Cảm xúc cuối cùng của ngày đó)
-        val emotionMap = mutableMapOf<Int, String>()
-        entries.sortedBy { it.timestamp }.forEach { entry ->
-            val cal = Calendar.getInstance()
-            cal.time = entry.timestamp
-            val dayOfMonth = cal.get(Calendar.DAY_OF_MONTH)
-            emotionMap[dayOfMonth] = entry.emotion
+        // 1. Map Data: DayOfMonth -> Emotion (Last entry of day wins)
+        val emotionMap = entries.sortedBy { it.timestamp }.associate { entry ->
+            val cal = Calendar.getInstance().apply { time = entry.timestamp }
+            cal.get(Calendar.DAY_OF_MONTH) to entry.emotion
         }
 
-        // B. Tạo lưới lịch
+        // 2. Setup Calendar Pointer
+        // Start from the 1st day of the requested month
+        val iteratorCal = Calendar.getInstance(Locale("vi", "VN")).apply {
+            set(year, month - 1, 1, 0, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        // 3. Calculate Start Offset (To make Monday the first day)
+        // Calendar.SUNDAY = 1, MONDAY = 2 ...
+        // If Sun(1) -> back 6 days. If Mon(2) -> back 0 days.
+        val dayOfWeek = iteratorCal.get(Calendar.DAY_OF_WEEK)
+        val daysToSubtract = if (dayOfWeek == Calendar.SUNDAY) 6 else dayOfWeek - 2
+        iteratorCal.add(Calendar.DAY_OF_YEAR, -daysToSubtract)
+
+        // 4. Generate Grid (Standard 6 rows * 7 cols = 42 cells)
         val calendarDays = mutableListOf<CalendarDay>()
-        val cal = Calendar.getInstance(Locale("vi", "VN"))
-        cal.set(year, month - 1, 1, 0, 0, 0)
+        repeat(42) {
+            val date = iteratorCal.time
+            val dayVal = iteratorCal.get(Calendar.DAY_OF_MONTH)
 
-        val daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+            // Check if this cell belongs to the currently selected month
+            // Note: Month in Calendar is 0-indexed, so we compare with (month - 1)
+            val isTargetMonth = iteratorCal.get(Calendar.MONTH) == (month - 1)
 
-        // Căn chỉnh Thứ Hai là ngày đầu tuần
-        var firstDayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
-        firstDayOfWeek = if (firstDayOfWeek == 1) 7 else firstDayOfWeek - 1
-
-        // Lấy số ngày của tháng trước
-        val prevMonthCal = (cal.clone() as Calendar).apply { add(Calendar.MONTH, -1) }
-        val daysInPrevMonth = prevMonthCal.getActualMaximum(Calendar.DAY_OF_MONTH)
-
-        // 1. Thêm các ngày mờ của tháng trước
-        for (i in (firstDayOfWeek - 2) downTo 0) {
-            val day = daysInPrevMonth - i
-            val date = (prevMonthCal.clone() as Calendar).apply { set(Calendar.DAY_OF_MONTH, day) }.time
-            calendarDays.add(CalendarDay(date = date, dayOfMonth = day.toString(), isCurrentMonth = false, emotion = null))
-        }
-
-        // 2. Thêm các ngày của tháng này
-        val currentMonthCal = cal.clone() as Calendar
-        for (i in 1..daysInMonth) {
-            val date = (currentMonthCal.clone() as Calendar).apply { set(Calendar.DAY_OF_MONTH, i) }.time
             calendarDays.add(
                 CalendarDay(
                     date = date,
-                    dayOfMonth = i.toString(),
-                    isCurrentMonth = true,
-                    emotion = emotionMap[i] // Lấy cảm xúc
+                    dayOfMonth = dayVal.toString(),
+                    isCurrentMonth = isTargetMonth,
+                    emotion = if (isTargetMonth) emotionMap[dayVal] else null
                 )
             )
-        }
 
-        // 3. Thêm các ngày mờ của tháng sau
-        val nextMonthCal = cal.clone() as Calendar
-        nextMonthCal.add(Calendar.MONTH, 1)
-        val daysToAdd = 42 - calendarDays.size // (Lưới 6x7 = 42)
-        for (i in 1..daysToAdd) {
-            calendarDays.add(CalendarDay(date = nextMonthCal.time, i.toString(), isCurrentMonth = false, emotion = null))
+            // Move to next day
+            iteratorCal.add(Calendar.DAY_OF_YEAR, 1)
         }
 
         return calendarDays

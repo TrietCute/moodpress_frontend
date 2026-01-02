@@ -13,9 +13,9 @@ import java.util.Date
 import javax.inject.Inject
 
 sealed class ProfileUiState {
-    object Loading : ProfileUiState()
-    data class Loaded(val profile: UserProfile) : ProfileUiState() // Dữ liệu đã tải xong
-    object Success : ProfileUiState() // Lưu thành công
+    data object Loading : ProfileUiState()
+    data class Loaded(val profile: UserProfile) : ProfileUiState()
+    data object Success : ProfileUiState() // Lưu thành công
     data class Error(val message: String) : ProfileUiState()
 }
 

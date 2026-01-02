@@ -18,7 +18,9 @@ class MoodCountAdapter : RecyclerView.Adapter<MoodCountAdapter.ViewHolder>() {
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemMoodStatBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = ItemMoodStatBinding.inflate(
+            LayoutInflater.from(parent.context), parent, false
+        )
         return ViewHolder(binding)
     }
 
@@ -28,23 +30,22 @@ class MoodCountAdapter : RecyclerView.Adapter<MoodCountAdapter.ViewHolder>() {
 
     override fun getItemCount() = items.size
 
-    inner class ViewHolder(private val binding: ItemMoodStatBinding) : RecyclerView.ViewHolder(binding.root) {
+    inner class ViewHolder(private val binding: ItemMoodStatBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+
         fun bind(item: MoodCount) {
-            val context = binding.root.context
+            with(binding) {
+                val context = root.context
+                val (iconRes, colorRes) = getMoodResource(item.emotion)
 
-            // 1. Set Icon & Màu & Tên
-            val (iconRes, colorRes) = getMoodResource(item.emotion)
+                imgMoodIcon.setImageResource(iconRes)
+                tvMoodName.text = item.emotion
 
-            binding.imgMoodIcon.setImageResource(iconRes)
-            binding.tvMoodName.text = item.emotion
+                progressMood.progress = item.percentage.toInt()
+                progressMood.progressTintList = ContextCompat.getColorStateList(context, colorRes)
 
-            // 2. Set Progress Bar
-            binding.progressMood.progress = item.percentage.toInt()
-            binding.progressMood.progressTintList =
-                ContextCompat.getColorStateList(context, colorRes)
-
-            // 3. Set Text Count
-            binding.tvMoodCount.text = "${item.count} (${item.percentage}%)"
+                tvMoodCount.text = "${item.count} (${item.percentage}%)"
+            }
         }
 
         private fun getMoodResource(emotion: String): Pair<Int, Int> {

@@ -16,7 +16,6 @@ class ImageViewerDialog(private val imageUrl: Any) : DialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Cài đặt Style để Full Screen và trong suốt
         setStyle(STYLE_NORMAL, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
     }
 
@@ -30,13 +29,9 @@ class ImageViewerDialog(private val imageUrl: Any) : DialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // 1. Load ảnh bằng Glide
         Glide.with(this)
             .load(imageUrl)
             .into(binding.photoView)
-
-        // 2. Nút Đóng
         binding.btnClose.setOnClickListener {
             dismiss()
         }

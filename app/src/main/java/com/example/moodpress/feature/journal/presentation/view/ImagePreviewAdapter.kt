@@ -5,7 +5,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.example.moodpress.databinding.ItemImagePreviewBinding // (Bạn cần tạo layout này)
+import com.example.moodpress.databinding.ItemImagePreviewBinding
 
 class ImagePreviewAdapter(
     private val onImageClick: (Any) -> Unit,
@@ -29,7 +29,7 @@ class ImagePreviewAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(items[position], position)
+        holder.bind(items[position])
     }
 
     override fun getItemCount(): Int = items.size
@@ -37,18 +37,23 @@ class ImagePreviewAdapter(
     inner class ViewHolder(private val binding: ItemImagePreviewBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: Any, position: Int) {
-            Glide.with(binding.root)
-                .load(item)
-                .centerCrop()
-                .into(binding.imgThumb)
+        fun bind(item: Any) {
+            with(binding) {
+                Glide.with(root)
+                    .load(item)
+                    .centerCrop()
+                    .into(imgThumb)
 
-            binding.btnDelete.setOnClickListener {
-                onDeleteClick(position)
-            }
+                btnDelete.setOnClickListener {
+                    val pos = bindingAdapterPosition
+                    if (pos != RecyclerView.NO_POSITION) {
+                        onDeleteClick(pos)
+                    }
+                }
 
-            binding.imgThumb.setOnClickListener {
-                onImageClick(item)
+                imgThumb.setOnClickListener {
+                    onImageClick(item)
+                }
             }
         }
     }

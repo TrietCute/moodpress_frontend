@@ -13,7 +13,6 @@ class JournalOptionsBottomSheet : BottomSheetDialogFragment() {
     private var _binding: DialogJournalOptionsBinding? = null
     private val binding get() = _binding!!
 
-    // Interface để gửi sự kiện click về HomeFragment
     private var listener: OptionsListener? = null
 
     interface OptionsListener {
@@ -23,7 +22,6 @@ class JournalOptionsBottomSheet : BottomSheetDialogFragment() {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        // Gán listener từ Fragment cha (HomeFragment)
         listener = parentFragment as? OptionsListener
     }
 
@@ -37,19 +35,24 @@ class JournalOptionsBottomSheet : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupClickListeners()
+    }
 
-        binding.optionEdit.setOnClickListener {
-            listener?.onEditClicked()
-            dismiss()
-        }
+    private fun setupClickListeners() {
+        with(binding) {
+            optionEdit.setOnClickListener {
+                listener?.onEditClicked()
+                dismiss()
+            }
 
-        binding.optionDelete.setOnClickListener {
-            listener?.onDeleteClicked()
-            dismiss()
-        }
+            optionDelete.setOnClickListener {
+                listener?.onDeleteClicked()
+                dismiss()
+            }
 
-        binding.optionCancel.setOnClickListener {
-            dismiss()
+            optionCancel.setOnClickListener {
+                dismiss()
+            }
         }
     }
 
@@ -60,6 +63,5 @@ class JournalOptionsBottomSheet : BottomSheetDialogFragment() {
 
     companion object {
         const val TAG = "JournalOptionsBottomSheet"
-        // (Chúng ta không cần truyền entry vào đây, vì HomeFragment đã giữ nó)
     }
 }

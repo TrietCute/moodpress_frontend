@@ -3,7 +3,7 @@ package com.example.moodpress.feature.stats.presentation.view.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.moodpress.databinding.ItemWeekOptionBinding // (Tạo layout xml đơn giản chỉ có 1 TextView)
+import com.example.moodpress.databinding.ItemWeekOptionBinding
 import com.example.moodpress.feature.stats.domain.model.WeekOption
 
 class WeekAdapter(
@@ -12,17 +12,27 @@ class WeekAdapter(
 ) : RecyclerView.Adapter<WeekAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemWeekOptionBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = ItemWeekOptionBinding.inflate(
+            LayoutInflater.from(parent.context), parent, false
+        )
         return ViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = weeks[position]
-        holder.binding.tvWeekLabel.text = item.label
-        holder.itemView.setOnClickListener { onWeekSelected(item) }
+        holder.bind(weeks[position])
     }
 
     override fun getItemCount() = weeks.size
 
-    class ViewHolder(val binding: ItemWeekOptionBinding) : RecyclerView.ViewHolder(binding.root)
+    inner class ViewHolder(private val binding: ItemWeekOptionBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(item: WeekOption) {
+            binding.tvWeekLabel.text = item.label
+
+            binding.root.setOnClickListener {
+                onWeekSelected(item)
+            }
+        }
+    }
 }

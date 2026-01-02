@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -19,7 +18,6 @@ import com.google.android.material.datepicker.MaterialDatePicker
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -31,7 +29,6 @@ class EditProfileFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: EditProfileViewModel by viewModels()
-
     private var selectedBirthday: Date? = null
 
     override fun onCreateView(
@@ -44,72 +41,75 @@ class EditProfileFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         setupClickListeners()
         observeViewModel()
     }
 
     private fun setupClickListeners() {
-        // 1. Nút Quay lại
-        binding.toolbar.setNavigationOnClickListener {
-            findNavController().popBackStack()
-        }
+        with(binding) {
+            toolbar.setNavigationOnClickListener {
+                findNavController().popBackStack()
+            }
 
-        // 2. Chọn ngày sinh
-        binding.buttonBirthdayPicker.setOnClickListener {
-            showBirthdayPicker()
-        }
+            buttonBirthdayPicker.setOnClickListener {
+                showBirthdayPicker()
+            }
 
-        // 3. Lưu thông tin
-        binding.buttonSave.setOnClickListener {
-            val name = binding.nameEditText.text.toString().trim()
-            val gender = getSelectedGender()
-
-            viewModel.saveProfile(name, gender, selectedBirthday)
+            buttonSave.setOnClickListener {
+                validateAndSave()
+            }
         }
     }
 
-    private fun observeViewModel() {
-        lifecycleScope.launch {
-            viewModel.uiState.collect { state ->
-                // Ẩn hiện loading nếu cần
+    private fun validateAndSave() {
+        val name = binding.nameEditText.text.toString().trim()
 
-                when (state) {
-                    is ProfileUiState.Loading -> {
-                        binding.buttonSave.isEnabled = false
-                        binding.buttonSave.text = "Đang lưu..."
-                    }
-                    is ProfileUiState.Success -> {
-                        Toast.makeText(context, "Cập nhật thành công!", Toast.LENGTH_SHORT).show()
-                        findNavController().popBackStack()
-                    }
-                    is ProfileUiState.Error -> {
-                        binding.buttonSave.isEnabled = true
-                        binding.buttonSave.text = "Lưu thay đổi"
-                        Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
-                    }
-                    is ProfileUiState.Loaded -> {
-                        // Điền dữ liệu cũ vào Form
-                        binding.buttonSave.isEnabled = true
-                        binding.buttonSave.text = "Lưu thay đổi"
-                        fillDataToUI(state.profile)
-                    }
-                }
+        if (name.isEmpty()) {
+            showToast("Vui lòng nhập tên")
+            return
+        }
+
+        val gender = getSelectedGender()
+        viewModel.saveProfile(name, gender, selectedBirthday)
+    }
+
+    private fun observeViewModel() {
+        // Sử dụng viewLifecycleOwner để đảm bảo flow hủy theo view của fragment
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.uiState.collect { state ->
+                handleUiState(state)
+            }
+        }
+    }
+
+    private fun handleUiState(state: ProfileUiState) {
+        val isButtonEnabled = state !is ProfileUiState.Loading
+        binding.buttonSave.isEnabled = isButtonEnabled
+        binding.buttonSave.text = if (state is ProfileUiState.Loading) "Đang lưu..." else "Lưu thay đổi"
+
+        when (state) {
+            is ProfileUiState.Loading -> { /* Handled above */ }
+            is ProfileUiState.Success -> {
+                showToast("Cập nhật thành công!")
+                findNavController().popBackStack()
+            }
+            is ProfileUiState.Error -> {
+                showToast(state.message)
+            }
+            is ProfileUiState.Loaded -> {
+                fillDataToUI(state.profile)
             }
         }
     }
 
     private fun fillDataToUI(profile: UserProfile) {
-        // Tên
         binding.nameEditText.setText(profile.name)
 
-        // Ngày sinh
         profile.birth?.let {
             selectedBirthday = it
             updateBirthdayText(it)
         }
 
-        // Giới tính
         when (profile.gender) {
             "Nam" -> binding.radioMale.isChecked = true
             "Nữ" -> binding.radioFemale.isChecked = true
@@ -127,22 +127,31 @@ class EditProfileFragment : Fragment() {
     }
 
     private fun showBirthdayPicker() {
+        val selection = selectedBirthday?.time ?: MaterialDatePicker.todayInUtcMilliseconds()
+
         val datePicker = MaterialDatePicker.Builder.datePicker()
             .setTitleText("Chọn ngày sinh")
-            .setSelection(selectedBirthday?.time ?: MaterialDatePicker.todayInUtcMilliseconds())
+            .setSelection(selection)
             .build()
 
-        datePicker.addOnPositiveButtonClickListener { selection ->
-            selectedBirthday = Date(selection)
-            updateBirthdayText(selectedBirthday!!)
+        datePicker.addOnPositiveButtonClickListener { timestamp ->
+            val date = Date(timestamp)
+            selectedBirthday = date
+            updateBirthdayText(date)
         }
         datePicker.show(childFragmentManager, "BIRTHDAY_PICKER")
     }
 
     private fun updateBirthdayText(date: Date) {
-        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale("vi", "VN"))
-        sdf.timeZone = TimeZone.getTimeZone("UTC")
+        // Sử dụng UTC để khớp với MaterialDatePicker selection
+        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale("vi", "VN")).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
         binding.birthdayEditText.setText(sdf.format(date))
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {

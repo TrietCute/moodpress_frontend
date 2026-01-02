@@ -5,7 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.example.moodpress.databinding.FragmentStatsBinding // (ViewBinding tự tạo từ XML)
+import com.example.moodpress.databinding.FragmentStatsBinding
 import com.example.moodpress.feature.stats.presentation.view.adapter.StatsPagerAdapter
 import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
@@ -30,15 +30,12 @@ class StatsFragment : Fragment() {
     }
 
     private fun setupViewPager() {
-        // 1. Khởi tạo Adapter, truyền 'this' (là Fragment hiện tại)
-        val adapter = StatsPagerAdapter(this)
-        binding.viewPager.adapter = adapter
+        binding.viewPager.adapter = StatsPagerAdapter(this)
 
-        // 2. Kết nối TabLayout với ViewPager2
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
-            when (position) {
-                0 -> tab.text = "Theo Tuần"
-                1 -> tab.text = "Theo Tháng"
+            tab.text = when (position) {
+                0 -> "Theo Tuần"
+                else -> "Theo Tháng"
             }
         }.attach()
     }

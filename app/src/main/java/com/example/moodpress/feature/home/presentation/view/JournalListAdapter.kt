@@ -1,17 +1,15 @@
 package com.example.moodpress.feature.home.presentation.view
 
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.example.moodpress.feature.journal.domain.model.JournalEntry
+import com.example.moodpress.R
 import com.example.moodpress.databinding.ItemJournalEntryBinding
+import com.example.moodpress.feature.journal.domain.model.JournalEntry
 import java.text.SimpleDateFormat
 import java.util.Locale
-import com.example.moodpress.R
 
 class JournalListAdapter(
     private val listener: OnJournalActionsListener
@@ -29,26 +27,24 @@ class JournalListAdapter(
     }
 
     override fun onBindViewHolder(holder: JournalViewHolder, position: Int) {
-        val entry = getItem(position)
-        holder.bind(entry)
-
-        holder.binding.buttonOptions.setOnClickListener {
-            listener.onMoreOptionsClicked(entry)
-        }
+        holder.bind(getItem(position))
     }
 
-    inner class JournalViewHolder(val binding: ItemJournalEntryBinding) :
+    inner class JournalViewHolder(private val binding: ItemJournalEntryBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         private val timeFormat = SimpleDateFormat("HH:mm a, EEE dd/MM", Locale("vi", "VN"))
-        private val context = binding.root.context
 
         fun bind(entry: JournalEntry) {
-            binding.journalContent.text = entry.content
-            binding.journalTime.text = timeFormat.format(entry.timestamp)
+            with(binding) {
+                journalContent.text = entry.content
+                journalTime.text = timeFormat.format(entry.timestamp)
+                emotionIcon.setImageResource(getEmotionIconRes(entry.emotion))
 
-            val iconRes = getEmotionIconRes(entry.emotion)
-            binding.emotionIcon.setImageResource(iconRes)
+                buttonOptions.setOnClickListener {
+                    listener.onMoreOptionsClicked(entry)
+                }
+            }
         }
 
         private fun getEmotionIconRes(emotion: String): Int {
@@ -68,6 +64,7 @@ class JournalDiffCallback : DiffUtil.ItemCallback<JournalEntry>() {
     override fun areItemsTheSame(oldItem: JournalEntry, newItem: JournalEntry): Boolean {
         return oldItem.id == newItem.id
     }
+
     override fun areContentsTheSame(oldItem: JournalEntry, newItem: JournalEntry): Boolean {
         return oldItem == newItem
     }
