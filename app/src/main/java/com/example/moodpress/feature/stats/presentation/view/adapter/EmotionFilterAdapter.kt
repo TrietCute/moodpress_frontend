@@ -27,7 +27,6 @@ class EmotionFilterAdapter(
         FilterItem("Rất tệ", "Rất tệ")
     )
 
-    // Theo dõi vị trí đang chọn để tối ưu update (Default: 0 - Tất cả)
     private var selectedPosition = 0
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {

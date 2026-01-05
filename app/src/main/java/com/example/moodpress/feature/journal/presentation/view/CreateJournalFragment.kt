@@ -1,14 +1,14 @@
 package com.example.moodpress.feature.journal.presentation.view
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -24,7 +24,6 @@ import com.example.moodpress.core.ui.hideLoading
 import com.example.moodpress.core.ui.showLoading
 import com.example.moodpress.databinding.FragmentCreateJournalBinding
 import com.example.moodpress.feature.journal.domain.model.AIAnalysis
-import com.example.moodpress.feature.journal.domain.model.JournalEntry
 import com.example.moodpress.feature.journal.presentation.viewmodel.CreateJournalViewModel
 import com.example.moodpress.feature.journal.presentation.viewmodel.SaveJournalState
 import com.google.android.material.datepicker.CalendarConstraints
@@ -53,14 +52,17 @@ class CreateJournalFragment : Fragment() {
         )
     }
 
+    private val moodAdapter by lazy {
+        MoodAdapter { selectedMood ->
+            viewModel.updateJournalEmotion(selectedMood.value)
+        }
+    }
+
     private val pickMedia = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(5)) { uris ->
         if (uris.isNotEmpty()) {
             viewModel.addImages(uris)
         }
     }
-
-    private var selectedDate: Date = Date()
-    private lateinit var emotionButtons: List<ImageButton>
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentCreateJournalBinding.inflate(inflater, container, false)
@@ -69,26 +71,48 @@ class CreateJournalFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        setupData()
         setupViews()
         handleArguments()
         setupClickListeners()
         observeViewModel()
     }
 
-    private fun setupViews() {
-        // Init Recycler
-        binding.recyclerImages.apply {
-            adapter = imageAdapter
-            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-        }
-
-        // Init Emotion Buttons
-        emotionButtons = binding.emotionLayout.children.mapNotNull { it as? ImageButton }.toList()
-
-        // Set Default Mood if empty
+    private fun setupData() {
+        val moodList = listOf(
+            MoodItem("Rất tệ", "Rất tệ", R.drawable.ic_emotion_very_dissatisfied, R.color.emotion_very_dissatisfied),
+            MoodItem("Tệ", "Tệ", R.drawable.ic_emotion_dissatisfied, R.color.emotion_dissatisfied),
+            MoodItem("Bình thường", "Bình thường", R.drawable.ic_emotion_neutral, R.color.emotion_neutral),
+            MoodItem("Tốt", "Tốt", R.drawable.ic_emotion_satisfied, R.color.emotion_satisfied),
+            MoodItem("Rất tốt", "Rất tốt", R.drawable.ic_emotion_very_satisfied, R.color.emotion_very_satisfied)
+        )
+        moodAdapter.submitList(moodList)
         if (viewModel.currentMood.value.isBlank()) {
-            viewModel.updateJournalEmotion(binding.emotionNeutral.contentDescription.toString())
+            viewModel.updateJournalEmotion("Bình thường")
+        }
+    }
+
+    private fun setupViews() {
+        with(binding) {
+            recyclerImages.apply {
+                adapter = imageAdapter
+                layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            }
+
+            recyclerEmotions.apply {
+                adapter = moodAdapter
+                layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+                itemAnimator = null
+            }
+
+            contentEditText.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    val length = s?.length ?: 0
+                    tvCharCount.text = "$length ký tự"
+                }
+                override fun afterTextChanged(s: Editable?) {}
+            })
         }
     }
 
@@ -97,33 +121,33 @@ class CreateJournalFragment : Fragment() {
         val journalId = args.journalId
 
         if (journalId != null) {
-            // Edit mode
             binding.buttonDatePicker.isEnabled = false
-            binding.buttonDatePicker.alpha = 0.5f
-        } else if (passedDateMillis != -1L) {
-            selectedDate = Date(passedDateMillis)
-            updateDateButtonText(passedDateMillis)
+            binding.buttonDatePicker.alpha = 0.6f
+            binding.toolbar.title = "Chỉnh sửa nhật ký"
         } else {
-            updateDateButtonText(selectedDate.time)
+            binding.toolbar.title = "Nhật ký mới"
+            if (passedDateMillis != -1L) {
+                viewModel.setEntryDate(passedDateMillis)
+            }
         }
     }
 
     private fun setupClickListeners() {
         with(binding) {
-            buttonClose.setOnClickListener { findNavController().popBackStack() }
+            toolbar.setNavigationOnClickListener {
+                findNavController().popBackStack()
+            }
 
-            buttonDatePicker.setOnClickListener { showDatePicker() }
+            buttonSave.setOnClickListener {
+                performSave()
+            }
+
+            buttonDatePicker.setOnClickListener {
+                showDatePicker()
+            }
 
             btnAddImage.setOnClickListener {
                 pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            }
-
-            buttonSave.setOnClickListener { performSave() }
-        }
-
-        emotionButtons.forEach { button ->
-            button.setOnClickListener {
-                viewModel.updateJournalEmotion(button.contentDescription.toString())
             }
         }
     }
@@ -133,7 +157,6 @@ class CreateJournalFragment : Fragment() {
             context = requireContext().applicationContext,
             content = binding.contentEditText.text.toString(),
             emotion = viewModel.currentMood.value,
-            selectedDate = selectedDate,
             isSilent = isSilent
         )
     }
@@ -145,6 +168,35 @@ class CreateJournalFragment : Fragment() {
                 launch { observeJournalData() }
                 launch { observeImages() }
                 launch { observeCurrentMood() }
+                launch {
+                    viewModel.entryDate.collect { date ->
+                        updateDateDisplay(date.time)
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun observeCurrentMood() {
+        viewModel.currentMood.collect { mood ->
+            moodAdapter.setSelectedMood(mood)
+        }
+    }
+
+    private suspend fun observeImages() {
+        viewModel.currentImages.collect { images ->
+            imageAdapter.submitList(images)
+            binding.recyclerImages.isVisible = images.isNotEmpty()
+            binding.btnAddImage.alpha = if (images.size >= 5) 0.5f else 1.0f
+        }
+    }
+
+    private suspend fun observeJournalData() {
+        viewModel.journalData.collect { entry ->
+            entry?.let {
+                if (binding.contentEditText.text.isNullOrEmpty()) {
+                    binding.contentEditText.setText(it.content)
+                }
             }
         }
     }
@@ -185,33 +237,32 @@ class CreateJournalFragment : Fragment() {
         }
     }
 
-    private suspend fun observeJournalData() {
-        viewModel.journalData.collect { entry ->
-            entry?.let {
-                binding.contentEditText.setText(it.content)
-                updateDateButtonText(it.timestamp.time)
-                selectedDate = it.timestamp
+    // --- Dialogs & UI Utils ---
+
+    private fun showDatePicker() {
+        val currentSelection = viewModel.entryDate.value.time
+
+        val constraints = CalendarConstraints.Builder()
+            .setValidator(DateValidatorPointBackward.before(System.currentTimeMillis() + 86400000))
+            .build()
+
+        MaterialDatePicker.Builder.datePicker()
+            .setTitleText("Chọn ngày")
+            .setSelection(currentSelection)
+            .setCalendarConstraints(constraints)
+            .build()
+            .apply {
+                addOnPositiveButtonClickListener { utcMillis ->
+                    viewModel.setEntryDate(utcMillis)
+                }
             }
-        }
+            .show(childFragmentManager, "DATE_PICKER")
     }
 
-    private suspend fun observeImages() {
-        viewModel.currentImages.collect { images ->
-            imageAdapter.submitList(images)
-            binding.recyclerImages.isVisible = images.isNotEmpty()
-            binding.btnAddImage.isVisible = images.size < 5
-        }
+    private fun updateDateDisplay(millis: Long) {
+        val sdf = SimpleDateFormat("EEEE, dd MMM", Locale("vi", "VN"))
+        binding.tvDateDisplay.text = sdf.format(Date(millis))
     }
-
-    private suspend fun observeCurrentMood() {
-        viewModel.currentMood.collect { mood ->
-            emotionButtons.forEach { button ->
-                button.alpha = if (button.contentDescription.toString() == mood) 1.0f else 0.5f
-            }
-        }
-    }
-
-    // --- Dialogs & Pickers ---
 
     private fun showConsistencyDialog(analysis: AIAnalysis) {
         val currentMood = viewModel.currentMood.value
@@ -248,30 +299,6 @@ class CreateJournalFragment : Fragment() {
                 findNavController().popBackStack()
             }
             .show()
-    }
-
-    private fun showDatePicker() {
-        val constraints = CalendarConstraints.Builder()
-            .setValidator(DateValidatorPointBackward.now())
-            .build()
-
-        MaterialDatePicker.Builder.datePicker()
-            .setTitleText("Chọn ngày")
-            .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
-            .setCalendarConstraints(constraints)
-            .build()
-            .apply {
-                addOnPositiveButtonClickListener { utcMillis ->
-                    selectedDate = Date(utcMillis)
-                    updateDateButtonText(utcMillis)
-                }
-            }
-            .show(childFragmentManager, "DATE_PICKER")
-    }
-
-    private fun updateDateButtonText(millis: Long) {
-        val sdf = SimpleDateFormat("EEEE, d MMMM", Locale("vi", "VN"))
-        binding.buttonDatePicker.text = sdf.format(Date(millis))
     }
 
     override fun onDestroyView() {

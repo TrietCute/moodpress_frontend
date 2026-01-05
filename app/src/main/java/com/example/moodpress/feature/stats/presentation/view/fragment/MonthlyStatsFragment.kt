@@ -78,7 +78,7 @@ class MonthlyStatsFragment : Fragment() {
         with(binding) {
             btnPrevMonth.setOnClickListener { viewModel.onPrevMonthClicked() }
             btnNextMonth.setOnClickListener { viewModel.onNextMonthClicked() }
-            btnSelectMonth.setOnClickListener { showMonthSelectionDialog() }
+            tvDateDisplay.setOnClickListener { showMonthSelectionDialog() }
         }
     }
 
@@ -98,7 +98,7 @@ class MonthlyStatsFragment : Fragment() {
                 updateStatBoxes(state.stats)
                 calendarAdapter.submitList(state.calendarDays)
 
-                binding.btnSelectMonth.text = state.label
+                binding.tvDateDisplay.text = state.label
                 binding.tvMonthFooter.text = "${state.label}\n${state.stats.totalEntries} mục nhập"
 
                 updateNavigationButtons()

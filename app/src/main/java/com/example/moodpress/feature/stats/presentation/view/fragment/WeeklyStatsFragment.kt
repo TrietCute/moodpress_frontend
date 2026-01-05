@@ -68,7 +68,6 @@ class WeeklyStatsFragment : Fragment() {
     }
 
     private fun setupViews() {
-        // Recycler View
         with(binding.recyclerMoodCounts) {
             layoutManager = LinearLayoutManager(context)
             adapter = moodAdapter
@@ -189,7 +188,6 @@ class WeeklyStatsFragment : Fragment() {
             maxAngle = 180f
             rotationAngle = 180f
             setCenterTextOffset(0f, -20f)
-
             legend.isEnabled = false
             description.isEnabled = false
             setTouchEnabled(false)

@@ -3,6 +3,8 @@ package com.example.moodpress.feature.journal.presentation.view
 import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.moodpress.databinding.ItemImagePreviewBinding
@@ -10,16 +12,7 @@ import com.example.moodpress.databinding.ItemImagePreviewBinding
 class ImagePreviewAdapter(
     private val onImageClick: (Any) -> Unit,
     private val onDeleteClick: (Int) -> Unit
-) : RecyclerView.Adapter<ImagePreviewAdapter.ViewHolder>() {
-
-    private val items = mutableListOf<Any>()
-
-    @SuppressLint("NotifyDataSetChanged")
-    fun submitList(newItems: List<Any>) {
-        items.clear()
-        items.addAll(newItems)
-        notifyDataSetChanged()
-    }
+) : ListAdapter<Any, ImagePreviewAdapter.ViewHolder>(ImageDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemImagePreviewBinding.inflate(
@@ -29,10 +22,8 @@ class ImagePreviewAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(items[position])
+        holder.bind(getItem(position))
     }
-
-    override fun getItemCount(): Int = items.size
 
     inner class ViewHolder(private val binding: ItemImagePreviewBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -51,10 +42,22 @@ class ImagePreviewAdapter(
                     }
                 }
 
+                root.setOnClickListener { onImageClick(item) }
                 imgThumb.setOnClickListener {
                     onImageClick(item)
                 }
             }
+        }
+    }
+
+    class ImageDiffCallback : DiffUtil.ItemCallback<Any>() {
+        override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
+            return oldItem.toString() == newItem.toString()
+        }
+
+        @SuppressLint("DiffUtilEquals")
+        override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
+            return oldItem == newItem
         }
     }
 }

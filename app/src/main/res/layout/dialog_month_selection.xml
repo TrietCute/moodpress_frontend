@@ -34,7 +34,7 @@
         android:layout_marginBottom="24dp">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_last_30_days"
+            android:id="@+id/btnLast30Days"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -45,7 +45,7 @@
             app:strokeColor="#BDBDBD"/>
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_this_month"
+            android:id="@+id/btnThisMonth"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -79,14 +79,14 @@
         android:layout_marginBottom="24dp">
 
         <NumberPicker
-            android:id="@+id/picker_month"
+            android:id="@+id/pickerYear"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="16dp"
             android:descendantFocusability="blocksDescendants"/>
 
         <NumberPicker
-            android:id="@+id/picker_year"
+            android:id="@+id/pickerMonth"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
@@ -94,7 +94,7 @@
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_confirm_picker"
+        android:id="@+id/btnConfirmPicker"
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:layout_marginHorizontal="16dp"

@@ -132,7 +132,7 @@ class SettingsFragment : Fragment() {
                 showToast(state.message)
             }
             is LinkAccountState.Idle -> {
-                binding.cardGoogleInfo.visibility = View.GONE
+                binding.cardGoogleInfo.visibility = View.VISIBLE
                 binding.buttonLinkAccount.visibility = View.VISIBLE
             }
 

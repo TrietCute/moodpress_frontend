@@ -51,7 +51,7 @@ class EditProfileFragment : Fragment() {
                 findNavController().popBackStack()
             }
 
-            buttonBirthdayPicker.setOnClickListener {
+            birthdayEditText.setOnClickListener {
                 showBirthdayPicker()
             }
 
@@ -111,17 +111,17 @@ class EditProfileFragment : Fragment() {
         }
 
         when (profile.gender) {
-            "Nam" -> binding.radioMale.isChecked = true
-            "Nữ" -> binding.radioFemale.isChecked = true
-            "Khác" -> binding.radioOther.isChecked = true
+            "Nam" -> binding.btnGenderMale.isChecked = true
+            "Nữ" -> binding.btnGenderFemale.isChecked = true
+            "Khác" -> binding.btnOther.isChecked = true
         }
     }
 
     private fun getSelectedGender(): String? {
-        return when (binding.genderGroup.checkedRadioButtonId) {
-            R.id.radio_male -> "Nam"
-            R.id.radio_female -> "Nữ"
-            R.id.radio_other -> "Khác"
+        return when (binding.genderToggleGroup.checkedButtonId) {
+            R.id.btn_gender_male -> "Nam"
+            R.id.btn_gender_female -> "Nữ"
+            R.id.btn_other -> "Khác"
             else -> null
         }
     }

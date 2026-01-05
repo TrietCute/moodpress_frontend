@@ -134,7 +134,7 @@ class HomeFragment : Fragment(),
         with(binding) {
             journalListRecyclerView.isVisible = isListView
             calendarContainer.isVisible = !isListView
-            viewToggleButton.setImageResource(
+            viewToggleButton.setIconResource(
                 if (isListView) R.drawable.ic_view_list else R.drawable.ic_calendar
             )
         }

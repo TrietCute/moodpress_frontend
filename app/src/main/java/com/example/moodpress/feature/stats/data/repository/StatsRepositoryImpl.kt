@@ -12,7 +12,8 @@ class StatsRepositoryImpl @Inject constructor(
 ) : StatsRepository {
 
     override suspend fun getWeeklyStats(startDate: String): WeeklyStats {
-        return apiService.getWeeklyStats(startDate).toDomain()
+        val offsetMinutes = getTimeZoneOffset()
+        return apiService.getWeeklyStats(startDate, offsetMinutes).toDomain()
     }
 
     override suspend fun getFirstJournalDate(): Date? {
@@ -20,8 +21,8 @@ class StatsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getMonthlyStats(startDate: String, endDate: String): WeeklyStats {
-        val offsetInMinutes = getTimeZoneOffset()
-        return apiService.getMonthlyStats(startDate, endDate, offsetInMinutes).toDomain()
+        val offsetMinutes = getTimeZoneOffset()
+        return apiService.getMonthlyStats(startDate, endDate, offsetMinutes).toDomain()
     }
 
     private fun getTimeZoneOffset(): Int {

@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.Calendar
 import java.util.Date
+import java.util.TimeZone
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -45,6 +46,8 @@ class CreateJournalViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
+    // --- STATES ---
+
     private val _saveState = MutableStateFlow<SaveJournalState>(SaveJournalState.Idle)
     val saveState: StateFlow<SaveJournalState> = _saveState.asStateFlow()
 
@@ -57,12 +60,21 @@ class CreateJournalViewModel @Inject constructor(
     private val _currentImages = MutableStateFlow<List<Any>>(emptyList())
     val currentImages: StateFlow<List<Any>> = _currentImages.asStateFlow()
 
-    var currentJournalId: String? = savedStateHandle["journalId"]
+    private val _entryDate = MutableStateFlow(Date())
+    val entryDate: StateFlow<Date> = _entryDate.asStateFlow()
+
+    private var currentJournalId: String? = savedStateHandle["journalId"]
     private val isEditMode: Boolean get() = currentJournalId != null
 
     init {
         currentJournalId?.let { loadJournalDetails(it) }
+        val selectedDateArg = savedStateHandle.get<Long>("selectedDate")
+        if (selectedDateArg != null && selectedDateArg != -1L) {
+            _entryDate.value = Date(selectedDateArg)
+        }
     }
+
+    // --- DATA LOADING ---
 
     private fun loadJournalDetails(id: String) {
         viewModelScope.launch {
@@ -70,17 +82,32 @@ class CreateJournalViewModel @Inject constructor(
                 val data = getJournalEntryUseCase(id)
                 _journalData.value = data
                 _currentMood.value = data.emotion
-                setInitialImages(data.imageUrls)
+                _entryDate.value = data.timestamp
+
+                if (_currentImages.value.isEmpty()) {
+                    _currentImages.value = data.imageUrls
+                }
             } catch (e: Exception) {
                 _saveState.value = SaveJournalState.Error(e.message ?: "Lỗi tải dữ liệu")
             }
         }
     }
 
-    fun setInitialImages(imageUrls: List<String>) {
-        if (_currentImages.value.isEmpty()) {
-            _currentImages.value = imageUrls
-        }
+    // --- USER ACTIONS ---
+
+    fun setEntryDate(millis: Long) {
+        val calendarUTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+        calendarUTC.timeInMillis = millis
+
+        val calendarLocal = Calendar.getInstance()
+        calendarLocal.timeInMillis = System.currentTimeMillis()
+        calendarLocal.set(Calendar.YEAR, calendarUTC.get(Calendar.YEAR))
+        calendarLocal.set(Calendar.MONTH, calendarUTC.get(Calendar.MONTH))
+        calendarLocal.set(Calendar.DAY_OF_MONTH, calendarUTC.get(Calendar.DAY_OF_MONTH))
+        calendarLocal.set(Calendar.HOUR_OF_DAY, 0)
+        calendarLocal.set(Calendar.MINUTE, 0)
+        calendarLocal.set(Calendar.SECOND, 0)
+        _entryDate.value = calendarLocal.time
     }
 
     fun addImages(uris: List<Uri>) {
@@ -97,7 +124,6 @@ class CreateJournalViewModel @Inject constructor(
 
     fun updateJournalEmotion(newEmotion: String) {
         _currentMood.value = newEmotion
-        _journalData.update { it?.copy(emotion = newEmotion) }
     }
 
     fun quickUpdateEmotion(newEmotion: String) {
@@ -115,7 +141,7 @@ class CreateJournalViewModel @Inject constructor(
                     id = journalId,
                     content = currentContent,
                     emotion = newEmotion,
-                    dateTime = null,
+                    dateTime = _entryDate.value,
                     imageUrls = currentImageUrls
                 )
 
@@ -132,17 +158,16 @@ class CreateJournalViewModel @Inject constructor(
         context: Context,
         content: String,
         emotion: String,
-        selectedDate: Date,
-        isSilent: Boolean
+        isSilent: Boolean = false
     ) {
         if (content.isBlank()) {
-            _saveState.value = SaveJournalState.Error("Nội dung không được để trống.")
+            _saveState.value = SaveJournalState.Error("Hãy viết gì đó trước khi lưu nhé!")
             return
         }
 
         val finalEmotion = _currentMood.value.ifBlank { emotion }
         if (finalEmotion.isBlank()) {
-            _saveState.value = SaveJournalState.Error("Vui lòng chọn một cảm xúc.")
+            _saveState.value = SaveJournalState.Error("Bạn đang cảm thấy thế nào? Hãy chọn một cảm xúc.")
             return
         }
 
@@ -150,12 +175,10 @@ class CreateJournalViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                // Separate existing URLs from new URIs
                 val currentList = _currentImages.value
                 val existingUrls = currentList.filterIsInstance<String>().toMutableList()
                 val newUris = currentList.filterIsInstance<Uri>()
 
-                // Upload new images
                 if (newUris.isNotEmpty()) {
                     val uploadedUrls = newUris.map { uri ->
                         async { uploadImageToCloudinary(context, uri) }
@@ -163,21 +186,17 @@ class CreateJournalViewModel @Inject constructor(
                     existingUrls.addAll(uploadedUrls)
                 }
 
+                val finalDateTime = combineDateWithLogic(_entryDate.value)
+
                 val resultEntry = if (isEditMode) {
                     updateJournalUseCase(
                         id = currentJournalId!!,
                         content = content,
                         emotion = finalEmotion,
-                        dateTime = null,
+                        dateTime = finalDateTime,
                         imageUrls = existingUrls
                     )
                 } else {
-                    val finalDateTime = if (isToday(selectedDate)) {
-                        combineDateAndTime(selectedDate)
-                    } else {
-                        setNoonTime(selectedDate)
-                    }
-
                     saveJournalUseCase(
                         content = content,
                         emotion = finalEmotion,
@@ -186,10 +205,9 @@ class CreateJournalViewModel @Inject constructor(
                     )
                 }
 
-                // Update internal state after successful save
                 currentJournalId = resultEntry.id
                 _journalData.value = resultEntry
-                _currentImages.value = resultEntry.imageUrls // Replace mixed list with pure URL list
+                _currentImages.value = resultEntry.imageUrls
 
                 _saveState.value = SaveJournalState.Success(resultEntry, isSilent = isSilent)
 
@@ -199,11 +217,32 @@ class CreateJournalViewModel @Inject constructor(
         }
     }
 
+    private fun combineDateWithLogic(selectedDate: Date): Date {
+        val now = Calendar.getInstance()
+        val selectedCal = Calendar.getInstance()
+        selectedCal.time = selectedDate
+
+        val isToday = now.get(Calendar.YEAR) == selectedCal.get(Calendar.YEAR) &&
+                now.get(Calendar.DAY_OF_YEAR) == selectedCal.get(Calendar.DAY_OF_YEAR)
+
+        return if (isToday) {
+            selectedCal.set(Calendar.HOUR_OF_DAY, now.get(Calendar.HOUR_OF_DAY))
+            selectedCal.set(Calendar.MINUTE, now.get(Calendar.MINUTE))
+            selectedCal.set(Calendar.SECOND, now.get(Calendar.SECOND))
+            selectedCal.time
+        } else {
+            selectedCal.set(Calendar.HOUR_OF_DAY, 12)
+            selectedCal.set(Calendar.MINUTE, 0)
+            selectedCal.set(Calendar.SECOND, 0)
+            selectedCal.time
+        }
+    }
+
     fun resetState() {
         _saveState.value = SaveJournalState.Idle
     }
 
-    // --- Helpers ---
+    // --- HELPERS ---
 
     private suspend fun uploadImageToCloudinary(context: Context, uri: Uri): String = suspendCancellableCoroutine { cont ->
         val preprocessChain = ImagePreprocessChain()
@@ -214,7 +253,12 @@ class CreateJournalViewModel @Inject constructor(
             .preprocess(preprocessChain)
             .callback(object : UploadCallback {
                 override fun onSuccess(requestId: String, resultData: Map<*, *>) {
-                    cont.resume(resultData["secure_url"] as String)
+                    val url = resultData["secure_url"] as? String
+                    if (url != null) {
+                        cont.resume(url)
+                    } else {
+                        cont.resumeWithException(Exception("Không lấy được URL ảnh"))
+                    }
                 }
                 override fun onError(requestId: String, error: ErrorInfo) {
                     cont.resumeWithException(Exception("Upload thất bại: ${error.description}"))
@@ -225,30 +269,4 @@ class CreateJournalViewModel @Inject constructor(
             }).dispatch(context)
     }
 
-    private fun combineDateAndTime(selectedDate: Date): Date {
-        val now = Calendar.getInstance()
-        return Calendar.getInstance().apply {
-            time = selectedDate
-            set(Calendar.HOUR_OF_DAY, now.get(Calendar.HOUR_OF_DAY))
-            set(Calendar.MINUTE, now.get(Calendar.MINUTE))
-            set(Calendar.SECOND, now.get(Calendar.SECOND))
-        }.time
-    }
-
-    private fun setNoonTime(selectedDate: Date): Date {
-        return Calendar.getInstance().apply {
-            time = selectedDate
-            set(Calendar.HOUR_OF_DAY, 12)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-        }.time
-    }
-
-    private fun isToday(date: Date): Boolean {
-        val today = Calendar.getInstance()
-        val selected = Calendar.getInstance().apply { time = date }
-
-        return today.get(Calendar.YEAR) == selected.get(Calendar.YEAR) &&
-                today.get(Calendar.DAY_OF_YEAR) == selected.get(Calendar.DAY_OF_YEAR)
-    }
 }

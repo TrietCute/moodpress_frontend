@@ -50,9 +50,10 @@ class UsernameActivity : AppCompatActivity() {
                 { _, year, month, dayOfMonth ->
                     calendar.set(year, month, dayOfMonth)
                     selectedBirth = calendar.time
-                    binding.buttonBirthdayPicker.text = String.format(
+                    val dateString = String.format(
                         Locale.getDefault(), "%02d/%02d/%d", dayOfMonth, month + 1, year
                     )
+                    binding.buttonBirthdayPicker.setText(dateString)
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
@@ -63,7 +64,7 @@ class UsernameActivity : AppCompatActivity() {
 
     private fun validateAndSubmit() {
         val name = binding.nameEditText.text.toString().trim()
-        val checkedGenderId = binding.genderGroup.checkedRadioButtonId
+        val checkedGenderId = binding.genderGroup.checkedButtonId
         val birth = selectedBirth
 
         if (name.isEmpty()) {

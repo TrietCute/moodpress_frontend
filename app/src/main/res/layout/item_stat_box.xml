@@ -6,43 +6,46 @@
     android:id="@+id/card_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardCornerRadius="16dp"
+    android:layout_margin="8dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="24dp"
     app:cardElevation="0dp"
-    app:strokeWidth="0dp"
-    app:cardBackgroundColor="#F5F5F5"> <LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="16dp">
+    app:cardBackgroundColor="@color/white"
+    app:strokeWidth="1dp"
+    app:strokeColor="#E0E0E0"
+    app:rippleColor="#1A6200EE">
 
-    <ImageView
-        android:id="@+id/img_icon"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginBottom="8dp"
-        app:tint="@color/colorPrimary"
-        tools:src="@drawable/ic_calendar"/>
-
-    <TextView
-        android:id="@+id/tv_label"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="12sp"
-        android:textColor="#757575"
+        android:orientation="vertical"
         android:gravity="center"
-        tools:text="Hiện tại"/>
+        android:paddingVertical="20dp"
+        android:paddingHorizontal="16dp">
 
-    <TextView
-        android:id="@+id/tv_value"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="@color/black"
-        android:layout_marginTop="4dp"
-        tools:text="31"/>
+        <TextView
+            android:id="@+id/tv_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:textColor="#121212"
+            android:includeFontPadding="false"
+            android:fontFamily="sans-serif-medium"
+            tools:text="31"/>
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/tv_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="#757575"
+            android:gravity="center"
+            android:layout_marginTop="4dp"
+            android:letterSpacing="0.02"
+            tools:text="Số ngày liên tiếp"/>
+
+    </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

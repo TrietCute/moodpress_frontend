@@ -1,38 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/cardMiniPlayer"
     android:layout_width="wrap_content"
-    android:layout_height="60dp"
-    app:cardCornerRadius="30dp"
-    app:cardElevation="10dp"
-    app:cardBackgroundColor="#212121">
+    android:layout_height="64dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="32dp"
+    app:cardElevation="6dp"
+    app:cardBackgroundColor="#252525"
+    app:strokeWidth="1dp"
+    app:strokeColor="#1AFFFFFF"
+    app:rippleColor="#33FFFFFF">
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:animateLayoutChanges="true"> <ImageView
-        android:id="@+id/imgDisk"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:padding="12dp"
-        android:src="@drawable/ic_music_note"
-        app:tint="@color/white" />
+        android:paddingStart="4dp"
+        android:paddingEnd="12dp">
+        <ImageView
+            android:id="@+id/imgDisk"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:padding="10dp"
+            android:src="@drawable/ic_music_note"
+            android:background="@drawable/bg_disk_circle"
+            app:tint="@color/white"
+            android:contentDescription="Music Icon" />
 
         <LinearLayout
             android:id="@+id/layoutControls"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:orientation="horizontal"
-            android:visibility="gone"> <ImageButton
-            android:id="@+id/btnPauseResume"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_pause"
-            app:tint="@color/white" />
+            android:gravity="center_vertical"
+            android:visibility="gone">
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="wrap_content"/>
+
+            <ImageButton
+                android:id="@+id/btnPauseResume"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_pause"
+                android:scaleType="centerInside"
+                app:tint="@color/white"
+                android:contentDescription="Pause or Resume" />
 
             <ImageButton
                 android:id="@+id/btnStop"
@@ -40,10 +58,12 @@
                 android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_stop_square"
-                android:padding="12dp"
-                app:tint="#FF5252" />
+                android:padding="10dp"
+                android:scaleType="centerInside"
+                app:tint="#FF8A80"
+                android:contentDescription="Stop Music" />
 
-            <View android:layout_width="8dp" android:layout_height="1dp"/>
         </LinearLayout>
     </LinearLayout>
-</androidx.cardview.widget.CardView>
+
+</com.google.android.material.card.MaterialCardView>

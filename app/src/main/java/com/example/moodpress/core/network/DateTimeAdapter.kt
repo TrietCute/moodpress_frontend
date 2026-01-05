@@ -11,7 +11,7 @@ import java.util.TimeZone
 class DateTypeAdapter : JsonSerializer<Date>, JsonDeserializer<Date> {
 
     companion object {
-        private const val SERIALIZE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+        private const val SERIALIZE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
 
         private val DATE_FORMATS = arrayOf(
             "yyyy-MM-dd'T'HH:mm:ss.SSSSSS",  // Python microseconds (6 số lẻ)
@@ -26,9 +26,7 @@ class DateTypeAdapter : JsonSerializer<Date>, JsonDeserializer<Date> {
 
     override fun serialize(src: Date?, typeOfSrc: Type?, context: JsonSerializationContext?): JsonElement {
         if (src == null) return JsonNull.INSTANCE
-        val formatter = SimpleDateFormat(SERIALIZE_PATTERN, Locale.US).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }
+        val formatter = SimpleDateFormat(SERIALIZE_PATTERN, Locale.US)
         return JsonPrimitive(formatter.format(src))
     }
 
@@ -40,7 +38,11 @@ class DateTypeAdapter : JsonSerializer<Date>, JsonDeserializer<Date> {
         for (format in DATE_FORMATS) {
             try {
                 val formatter = SimpleDateFormat(format, Locale.US)
-                if (dateString.endsWith("Z")) {
+                if (dateString.endsWith("Z") || dateString.contains("+") || (dateString.count { it == '-' } > 2)) {
+                    if (dateString.endsWith("Z")) {
+                        formatter.timeZone = TimeZone.getTimeZone("UTC")
+                    }
+                } else {
                     formatter.timeZone = TimeZone.getTimeZone("UTC")
                 }
 
@@ -48,7 +50,6 @@ class DateTypeAdapter : JsonSerializer<Date>, JsonDeserializer<Date> {
             } catch (e: ParseException) {
             }
         }
-        System.err.println("DateTypeAdapter: Không thể parse ngày '$dateString'")
         return null
     }
 }

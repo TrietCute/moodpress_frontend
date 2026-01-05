@@ -8,7 +8,8 @@ import retrofit2.http.Query
 interface StatsApiService {
     @GET("stats/weekly")
     suspend fun getWeeklyStats(
-        @Query("start_date") startDate: String
+        @Query("start_date") startDate: String,
+        @Query("timezone_offset") timezoneOffset: Int
     ): WeeklyStatsResponseDto
 
     @GET("stats/monthly")

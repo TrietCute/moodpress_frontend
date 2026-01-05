@@ -33,6 +33,8 @@ class MonthlyStatsViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow<MonthlyUiState>(MonthlyUiState.Loading)
     val uiState: StateFlow<MonthlyUiState> = _uiState.asStateFlow()
+    private val apiDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    private val labelDateFormat = SimpleDateFormat("MMMM, yyyy", Locale("vi", "VN"))
 
     var firstEntryDate: Date? = null
         private set
@@ -59,24 +61,14 @@ class MonthlyStatsViewModel @Inject constructor(
         _uiState.value = MonthlyUiState.Loading
         is30DaysMode = isLast30Days
 
-        if (specificDate != null && !isLast30Days) {
-            currentStartDate.time = specificDate
-            currentStartDate.set(Calendar.DAY_OF_MONTH, 1)
-        }
-
-        val (startCal, endCal) = calculateDateRange(isLast30Days)
-
-        // Sync internal state if not 30 days mode (already synced above if specificDate provided)
-        if (!isLast30Days) {
-            currentStartDate = startCal.clone() as Calendar
-        }
+        val (startCal, endCal) = calculateDateRange(isLast30Days, specificDate)
+        currentStartDate = startCal.clone() as Calendar
 
         viewModelScope.launch {
             try {
-                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
                 val stats = statsRepository.getMonthlyStats(
-                    startDate = sdf.format(startCal.time),
-                    endDate = sdf.format(endCal.time)
+                    startDate = apiDateFormat.format(startCal.time),
+                    endDate = apiDateFormat.format(endCal.time)
                 )
 
                 rawStats = stats
@@ -88,116 +80,107 @@ class MonthlyStatsViewModel @Inject constructor(
         }
     }
 
-    fun filterByEmotion(emotion: String?) {
-        currentFilterEmotion = emotion
-        rawStats?.let { stats ->
-            // Re-process local data without API call
-            val (start, end) = calculateDateRange(is30DaysMode)
-            processDataForUi(stats, start, end)
+    private fun calculateDateRange(isLast30Days: Boolean, specificDate: Date?): Pair<Calendar, Calendar> {
+        val endCal = Calendar.getInstance()
+
+        return if (isLast30Days) {
+            val startCal = (endCal.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -29) }
+            startCal to endCal
+        } else {
+            val startCal = if (specificDate != null) {
+                Calendar.getInstance().apply { time = specificDate }
+            } else {
+                currentStartDate.clone() as Calendar
+            }
+            startCal.set(Calendar.DAY_OF_MONTH, 1)
+
+            endCal.time = startCal.time
+            endCal.set(Calendar.DAY_OF_MONTH, endCal.getActualMaximum(Calendar.DAY_OF_MONTH))
+
+            startCal to endCal
         }
     }
 
     private fun processDataForUi(stats: WeeklyStats, startCal: Calendar, endCal: Calendar) {
         val daysList = mutableListOf<MonthDayUiModel>()
-
-        // Optimization: Create a map for O(1) lookup instead of O(N) loop
         val moodMap = stats.dailyMoods.associate {
-            val cal = Calendar.getInstance().apply { time = it.date }
-            cal.get(Calendar.DAY_OF_MONTH) to it.emotion
+            apiDateFormat.format(it.date) to it.emotion
         }
 
         if (!is30DaysMode) {
             val firstDayOfWeek = startCal.get(Calendar.DAY_OF_WEEK)
-            val emptyCells = if (firstDayOfWeek == Calendar.SUNDAY) 6 else firstDayOfWeek - 2
+            val emptyCells = (firstDayOfWeek + 5) % 7
             repeat(emptyCells) {
                 daysList.add(MonthDayUiModel("", null))
             }
         }
 
-        val tempCal = startCal.clone() as Calendar
-        while (!tempCal.after(endCal)) {
-            val dayOfMonth = tempCal.get(Calendar.DAY_OF_MONTH)
-            val emotion = moodMap[dayOfMonth]
+        val iteratorCal = startCal.clone() as Calendar
+        while (!iteratorCal.after(endCal)) {
+            val dateKey = apiDateFormat.format(iteratorCal.time)
+            val emotion = moodMap[dateKey]
+            val dayOfMonth = iteratorCal.get(Calendar.DAY_OF_MONTH)
+            val (finalEmotion, isDimmed) = applyFilter(emotion)
 
-            val (finalEmotion, isDimmed) = applyFilterLogic(emotion)
-
-            daysList.add(MonthDayUiModel(
-                dayValue = dayOfMonth.toString(),
-                emotion = finalEmotion,
-                isDimmed = isDimmed
-            ))
-
-            tempCal.add(Calendar.DAY_OF_YEAR, 1)
+            daysList.add(
+                MonthDayUiModel(
+                    dayValue = dayOfMonth.toString(),
+                    emotion = finalEmotion,
+                    isDimmed = isDimmed
+                )
+            )
+            iteratorCal.add(Calendar.DAY_OF_YEAR, 1)
         }
 
-        val label = if (is30DaysMode) "30 ngày gần đây" else {
-            val sdf = SimpleDateFormat("MMMM, yyyy", Locale("vi", "VN"))
-            sdf.format(startCal.time)
-        }
-
+        val label = if (is30DaysMode) "30 ngày gần đây" else labelDateFormat.format(startCal.time)
         _uiState.value = MonthlyUiState.Success(stats, daysList, label)
     }
 
-    private fun applyFilterLogic(emotion: String?): Pair<String?, Boolean> {
-        if (currentFilterEmotion == null) return emotion to false
+    private fun applyFilter(emotion: String?): Pair<String?, Boolean> {
+        val filter = currentFilterEmotion ?: return emotion to false
 
-        return if (emotion == currentFilterEmotion) {
+        return if (emotion == filter) {
             emotion to false
         } else {
-            emotion to true // Dimmed
+            null to true
         }
     }
 
-    private fun calculateDateRange(isLast30Days: Boolean): Pair<Calendar, Calendar> {
-        return if (isLast30Days) {
-            val end = Calendar.getInstance()
-            val start = (end.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -29) }
-            start to end
-        } else {
-            val start = currentStartDate.clone() as Calendar
-            start.set(Calendar.DAY_OF_MONTH, 1)
-
-            val end = currentStartDate.clone() as Calendar
-            end.set(Calendar.DAY_OF_MONTH, end.getActualMaximum(Calendar.DAY_OF_MONTH))
-            start to end
+    fun filterByEmotion(emotion: String?) {
+        currentFilterEmotion = emotion
+        rawStats?.let { stats ->
+            val (_, endCal) = calculateDateRange(is30DaysMode, null)
+            processDataForUi(stats, currentStartDate, endCal)
         }
     }
 
     fun onPrevMonthClicked() {
         if (is30DaysMode) {
-            val cal = Calendar.getInstance()
-            cal.add(Calendar.MONTH, -1)
-            loadMonthlyStats(false, cal.time)
+            val prevMonth = Calendar.getInstance().apply { add(Calendar.MONTH, -1) }
+            loadMonthlyStats(false, prevMonth.time)
             return
         }
 
-        if (canGoBack()) {
-            currentStartDate.add(Calendar.MONTH, -1)
-            loadMonthlyStats(false, currentStartDate.time)
+        firstEntryDate?.let { firstDate ->
+            val firstCal = Calendar.getInstance().apply { time = firstDate }
+            if (isSameMonth(currentStartDate, firstCal) || currentStartDate.before(firstCal)) return
         }
+
+        currentStartDate.add(Calendar.MONTH, -1)
+        loadMonthlyStats(false, currentStartDate.time)
     }
 
     fun onNextMonthClicked() {
         if (is30DaysMode) return
 
-        if (canGoForward()) {
-            currentStartDate.add(Calendar.MONTH, 1)
-            loadMonthlyStats(false, currentStartDate.time)
-        }
-    }
-
-    private fun canGoBack(): Boolean {
-        val firstDate = firstEntryDate ?: return true
-        val firstCal = Calendar.getInstance().apply { time = firstDate }
-
-        // Ensure strictly after first entry month
-        return !isSameMonth(currentStartDate, firstCal) && currentStartDate.after(firstCal)
-    }
-
-    private fun canGoForward(): Boolean {
         val today = Calendar.getInstance()
-        return !isSameMonth(currentStartDate, today) && currentStartDate.before(today)
+        if (isSameMonth(currentStartDate, today) || currentStartDate.after(today)) return
+
+        currentStartDate.add(Calendar.MONTH, 1)
+        loadMonthlyStats(false, currentStartDate.time)
     }
+
+    // --- Helpers ---
 
     private fun isSameMonth(cal1: Calendar, cal2: Calendar): Boolean {
         return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&

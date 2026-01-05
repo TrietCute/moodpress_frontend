@@ -5,32 +5,64 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingTop="8dp"
-    android:paddingBottom="16dp">
-
-    <View
-        android:layout_width="40dp"
-        android:layout_height="4dp"
-        android:background="#E0E0E0"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="#E0E0E0"
-        style="@style/Widget.MaterialComponents.BottomSheet.Modal" />
-
-    <TextView
+    android:paddingBottom="24dp">
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Chọn tuần thống kê"
-        android:textSize="20sp"
-        android:textStyle="bold"
         android:gravity="center"
-        android:textColor="@color/black"
-        android:layout_marginBottom="16dp"/>
+        android:paddingTop="12dp"
+        android:paddingBottom="4dp">
+
+        <View
+            android:layout_width="40dp"
+            android:layout_height="5dp"
+            android:background="@drawable/bg_drag_handle"/>
+    </LinearLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Chọn tuần thống kê"
+            android:gravity="center"
+            android:textSize="20sp"
+            android:textColor="#212121"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btn_close"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+        <ImageButton
+            android:id="@+id/btn_close"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_close"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="8dp"
+            app:tint="#757575"
+            android:contentDescription="Đóng"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_weeks"
+        android:id="@+id/recyclerWeeks"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:clipToPadding="false"
+        android:paddingTop="8dp"
+        android:overScrollMode="never"
+        tools:itemCount="4"
         tools:listitem="@layout/item_week_option" />
+
 </LinearLayout>

@@ -2,9 +2,9 @@
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/card_root"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:id="@+id/cardRoot"
     android:layout_marginEnd="8dp"
     android:layout_marginTop="4dp"
     android:layout_marginBottom="4dp"
@@ -21,13 +21,13 @@
         android:gravity="center">
 
         <ImageView
-            android:id="@+id/img_icon"
+            android:id="@+id/imgIcon"
             android:layout_width="18dp"
             android:layout_height="18dp"
             android:src="@drawable/ic_emotion_satisfied"/>
 
         <TextView
-            android:id="@+id/tv_label"
+            android:id="@+id/tvLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"

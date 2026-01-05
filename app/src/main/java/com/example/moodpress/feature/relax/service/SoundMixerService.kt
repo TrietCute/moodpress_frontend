@@ -11,7 +11,6 @@ import android.media.MediaPlayer
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
-import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.example.moodpress.R
@@ -24,13 +23,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.URL
+import java.util.concurrent.CopyOnWriteArraySet
 
 class SoundMixerService : Service() {
 
     private val binder = LocalBinder()
     var isPaused = false
-    var onStateChanged: ((Boolean, Boolean) -> Unit)? = null
-    val activePlayers = HashMap<String, MediaPlayer>()
+    private val listeners = CopyOnWriteArraySet<(Boolean, Boolean) -> Unit>()
+    private val activePlayers = HashMap<String, MediaPlayer>()
+    private val loadingSounds = HashSet<String>()
     private val serviceScope = CoroutineScope(Dispatchers.Main + Job())
 
     companion object {
@@ -51,23 +52,114 @@ class SoundMixerService : Service() {
         createNotificationChannel()
     }
 
-    fun isPlayingAny(): Boolean = activePlayers.isNotEmpty()
+    fun addListener(listener: (Boolean, Boolean) -> Unit) {
+        listeners.add(listener)
+        listener(isPlayingAny(), isPaused)
+    }
 
-    fun toggleSound(sound: RelaxSound) {
-        if (isPaused) resumeAll()
-        if (activePlayers.containsKey(sound.audioUrl)) {
-            stopPlayer(sound.audioUrl)
-            sound.isPlaying = false
-        } else {
-            playPlayer(sound)
-            sound.isPlaying = true
-        }
-        updateNotification()
-        notifyStateChange()
+    fun removeListener(listener: (Boolean, Boolean) -> Unit) {
+        listeners.remove(listener)
     }
 
     private fun notifyStateChange() {
-        onStateChanged?.invoke(activePlayers.isNotEmpty(), isPaused)
+        val isPlaying = isPlayingAny()
+        listeners.forEach { it.invoke(isPlaying, isPaused) }
+    }
+
+    fun isPlayingAny(): Boolean = activePlayers.isNotEmpty() || loadingSounds.isNotEmpty()
+
+    fun toggleSound(sound: RelaxSound) {
+        if (isPaused) resumeAll()
+
+        if (activePlayers.containsKey(sound.audioUrl)) {
+            stopPlayer(sound.audioUrl)
+        } else if (loadingSounds.contains(sound.audioUrl)) {
+            return
+        } else {
+            handlePlayRequest(sound)
+        }
+    }
+
+    private fun handlePlayRequest(sound: RelaxSound) {
+        val fileName = "sound_${sound.id}.mp3"
+        val file = File(cacheDir, fileName)
+
+        if (file.exists() && file.length() > 0) {
+            startMediaPlayer(file.absolutePath, sound)
+        } else {
+            loadingSounds.add(sound.audioUrl)
+            notifyStateChange()
+
+            serviceScope.launch {
+                val downloadedPath = downloadFile(sound.audioUrl, fileName)
+                loadingSounds.remove(sound.audioUrl)
+                if (downloadedPath != null) {
+                    startMediaPlayer(downloadedPath, sound)
+                } else {
+                    notifyStateChange()
+                }
+            }
+        }
+    }
+
+    fun getActiveUrls(): Set<String> {
+        val combinedSet = HashSet<String>()
+        combinedSet.addAll(activePlayers.keys)
+        combinedSet.addAll(loadingSounds)
+        return combinedSet
+    }
+
+    private suspend fun downloadFile(urlStr: String, fileName: String): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val tempFile = File(cacheDir, "${fileName}.tmp")
+                val finalFile = File(cacheDir, fileName)
+
+                URL(urlStr).openStream().use { input ->
+                    tempFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                if (tempFile.exists() && tempFile.length() > 0) {
+                    tempFile.renameTo(finalFile)
+                    return@withContext finalFile.absolutePath
+                }
+                return@withContext null
+            } catch (e: Exception) {
+                e.printStackTrace()
+                return@withContext null
+            }
+        }
+    }
+
+    private fun startMediaPlayer(path: String, sound: RelaxSound) {
+        try {
+            if (activePlayers.containsKey(sound.audioUrl)) return
+
+            val player = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .build()
+                )
+                setDataSource(path)
+                isLooping = true
+                setVolume(1.0f, 1.0f)
+                prepare()
+                start()
+            }
+
+            activePlayers[sound.audioUrl] = player
+
+            updateNotification()
+            notifyStateChange()
+
+        } catch (e: Exception) {
+            loadingSounds.remove(sound.audioUrl)
+            notifyStateChange()
+        }
     }
 
     fun pauseAll() {
@@ -88,69 +180,6 @@ class SoundMixerService : Service() {
         }
     }
 
-    private suspend fun downloadFile(context: Context, url: String, fileName: String): String? {
-        return withContext(Dispatchers.IO) {
-            try {
-                val file = File(context.cacheDir, fileName)
-
-                if (file.exists() && file.length() > 0) {
-                    return@withContext file.absolutePath
-                }
-
-                URL(url).openStream().use { input ->
-                    file.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                return@withContext file.absolutePath
-            } catch (e: Exception) {
-                e.printStackTrace()
-                return@withContext null
-            }
-        }
-    }
-
-    private fun playPlayer(sound: RelaxSound) {
-        Toast.makeText(this, "Đang tải dữ liệu...", Toast.LENGTH_SHORT).show()
-
-        serviceScope.launch {
-            val fileName = "sound_${sound.id}.mp3"
-            val localPath = downloadFile(applicationContext, sound.audioUrl, fileName)
-
-            if (localPath != null) {
-                startMediaPlayer(localPath, sound)
-            } else {
-                Toast.makeText(applicationContext, "Lỗi tải nhạc. Kiểm tra kết nối!", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun startMediaPlayer(path: String, sound: RelaxSound) {
-        try {
-            val player = MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .build()
-                )
-                setDataSource(path)
-
-                isLooping = true
-                setVolume(1.0f, 1.0f)
-                prepare()
-            }
-            player.start()
-            activePlayers[sound.audioUrl] = player
-
-            updateNotification()
-            notifyStateChange()
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
     private fun stopPlayer(url: String) {
         activePlayers[url]?.let { player ->
             if (player.isPlaying) player.stop()
@@ -158,9 +187,9 @@ class SoundMixerService : Service() {
             activePlayers.remove(url)
         }
 
-        if (activePlayers.isEmpty()) {
+        if (activePlayers.isEmpty() && loadingSounds.isEmpty()) {
             stopForeground(STOP_FOREGROUND_REMOVE)
-            //stopSelf()
+            isPaused = false
         }
         notifyStateChange()
     }
@@ -171,6 +200,7 @@ class SoundMixerService : Service() {
             it.release()
         }
         activePlayers.clear()
+        loadingSounds.clear()
         isPaused = false
         stopForeground(STOP_FOREGROUND_REMOVE)
         notifyStateChange()
@@ -193,24 +223,39 @@ class SoundMixerService : Service() {
     }
 
     private fun buildNotification(): Notification {
+        val contentText = if (activePlayers.isNotEmpty()) {
+            "Đang phát ${activePlayers.size} âm thanh thiên nhiên"
+        } else {
+            "Chạm để quay lại"
+        }
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("MoodPress Relax")
-            .setContentText("Đang phát âm thanh thư giãn...")
+            .setContentText(contentText)
             .setSmallIcon(R.drawable.ic_music_note)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
             .build()
     }
 
     private fun updateNotification() {
         if (activePlayers.isNotEmpty()) {
             val notification = buildNotification()
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.notify(NOTIFICATION_ID, notification)
+            startForeground(NOTIFICATION_ID, notification)
+        } else {
+            stopForeground(STOP_FOREGROUND_REMOVE)
         }
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        stopAll()
+        stopSelf()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
+        stopAll()
     }
 }

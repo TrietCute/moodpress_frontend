@@ -1,5 +1,6 @@
 package com.example.moodpress.feature.home.presentation.view
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
@@ -61,10 +62,10 @@ class CalendarAdapter(
             }
         }
 
+        @SuppressLint("ResourceAsColor")
         private fun resolveColors(emotion: String?): Pair<Int, Int> {
             val context = binding.root.context
 
-            // Default state (No emotion)
             if (emotion == null) {
                 return android.R.color.transparent to ContextCompat.getColor(context, R.color.black)
             }

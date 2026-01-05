@@ -5,155 +5,166 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/white"
     android:padding="24dp"
     tools:context=".feature.user.presentation.view.UsernameActivity">
 
-    <TextView
-        android:id="@+id/text_question"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:id="@+id/header_container"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Tên của bạn là gì?"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/black"
-        android:layout_marginTop="100dp"
+        android:orientation="vertical"
+        android:layout_marginTop="60dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <TextView
-        android:id="@+id/text_subtitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Bạn có thể thay đổi sau này trong phần cài đặt."
-        android:textSize="16sp"
-        app:layout_constraintTop_toBottomOf="@id/text_question"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Giới thiệu bản thân"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#212121"
+            android:fontFamily="sans-serif-medium"/>
 
-    <!-- ScrollView đặt giữa subtitle và nút Next -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Hãy cho chúng tôi biết một chút về bạn để cá nhân hóa trải nghiệm."
+            android:textSize="16sp"
+            android:textColor="#757575"
+            android:lineSpacingExtra="4dp"/>
+    </LinearLayout>
+
     <ScrollView
-        android:id="@+id/scroll_section"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
         android:fillViewport="true"
-        app:layout_constraintTop_toBottomOf="@id/text_subtitle"
+        android:scrollbars="none"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintTop_toBottomOf="@id/header_container"
+        app:layout_constraintBottom_toTopOf="@id/next_button"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/next_button">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="24dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Họ và Tên"
-                android:textStyle="bold"
-                android:textColor="@color/black"
-                android:layout_marginBottom="8dp"/>
+            android:orientation="vertical">
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/name_layout"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
+                android:layout_marginBottom="24dp"
+                android:hint="Tên hiển thị"
+                app:startIconTint="#757575"
                 app:boxCornerRadiusTopStart="12dp"
-                android:hint="Nhập tên hiển thị">
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/name_edit_text"
+                    android:id="@+id/nameEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPersonName|textCapWords"
-                    android:maxLines="1" />
+                    android:maxLines="1"
+                    android:paddingStart="12dp"
+                    android:textColor="#212121"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Ngày sinh"
-                android:textStyle="bold"
-                android:textColor="@color/black"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="8dp"/>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_birthday_picker"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="Chọn ngày sinh"
-                android:textColor="@color/black"
-                android:gravity="start|center_vertical"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                app:icon="@drawable/ic_calendar"
-                app:iconTint="@color/black"
-                app:strokeColor="#BDBDBD"
-                app:strokeWidth="1dp"
-                app:cornerRadius="12dp"/>
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:hint="Ngày sinh"
+                app:startIconTint="#757575"
+                app:endIconDrawable="@drawable/ic_calendar"
+                app:endIconMode="custom"
+                app:endIconTint="#757575"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/buttonBirthdayPicker"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:inputType="none"
+                    android:paddingStart="12dp"
+                    android:textColor="#212121" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Giới tính"
                 android:textStyle="bold"
-                android:textColor="@color/black"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="8dp"/>
+                android:textColor="#757575"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="4dp"/>
 
-            <RadioGroup
-                android:id="@+id/gender_group"
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/genderGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                app:singleSelection="true"
+                app:selectionRequired="true"
+                app:checkedButton="@id/btn_male">
 
-                <RadioButton
-                    android:id="@+id/radio_male"
-                    android:layout_width="wrap_content"
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_male"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="Nam"
-                    android:layout_weight="1"/>
+                    android:textColor="@color/selector_gender_text_color"
+                    app:strokeColor="@color/selector_gender_stroke_color"/>
 
-                <RadioButton
-                    android:id="@+id/radio_female"
-                    android:layout_width="wrap_content"
+                <com.google.android.material.button.MaterialButton
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="Nữ"
-                    android:layout_weight="1"/>
+                    android:textColor="@color/selector_gender_text_color"
+                    app:strokeColor="@color/selector_gender_stroke_color"/>
 
-                <RadioButton
-                    android:id="@+id/radio_other"
-                    android:layout_width="wrap_content"
+                <com.google.android.material.button.MaterialButton
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="Khác"
-                    android:layout_weight="1"/>
-            </RadioGroup>
+                    android:textColor="@color/selector_gender_text_color"
+                    app:strokeColor="@color/selector_gender_stroke_color"/>
+
+            </com.google.android.material.button.MaterialButtonToggleGroup>
 
         </LinearLayout>
     </ScrollView>
 
-    <!-- Button cố định ở dưới -->
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/next_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
         android:layout_marginBottom="16dp"
-        android:padding="16dp"
         android:text="Tiếp theo"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="@color/colorPrimary"
         app:cornerRadius="30dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

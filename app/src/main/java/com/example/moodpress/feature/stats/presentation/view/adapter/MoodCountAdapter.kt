@@ -1,8 +1,10 @@
 package com.example.moodpress.feature.stats.presentation.view.adapter
 
+import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.example.moodpress.R
 import com.example.moodpress.databinding.ItemMoodStatBinding
@@ -37,14 +39,19 @@ class MoodCountAdapter : RecyclerView.Adapter<MoodCountAdapter.ViewHolder>() {
             with(binding) {
                 val context = root.context
                 val (iconRes, colorRes) = getMoodResource(item.emotion)
+                val moodColor = ContextCompat.getColor(context, colorRes)
 
                 imgMoodIcon.setImageResource(iconRes)
+                imgMoodIcon.setColorFilter(moodColor)
+                val bgDrawable = containerIcon.background as? GradientDrawable
+                val fadedColor = ColorUtils.setAlphaComponent(moodColor, 40)
+                bgDrawable?.setColor(fadedColor)
+
                 tvMoodName.text = item.emotion
+                tvMoodCount.text = "${item.count} (${item.percentage}%)"
 
                 progressMood.progress = item.percentage.toInt()
-                progressMood.progressTintList = ContextCompat.getColorStateList(context, colorRes)
-
-                tvMoodCount.text = "${item.count} (${item.percentage}%)"
+                progressMood.setIndicatorColor(moodColor)
             }
         }
 

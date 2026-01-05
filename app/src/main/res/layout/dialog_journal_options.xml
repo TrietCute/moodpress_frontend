@@ -15,7 +15,7 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/option_edit"
+                android:id="@+id/optionEdit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Chỉnh sửa"
@@ -30,7 +30,7 @@
                 android:background="?android:attr/listDivider"/>
 
             <TextView
-                android:id="@+id/option_delete"
+                android:id="@+id/optionDelete"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Xóa"
@@ -48,7 +48,7 @@
         android:layout_marginTop="8dp">
 
         <TextView
-            android:id="@+id/option_cancel"
+            android:id="@+id/optionCancel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Hủy bỏ"

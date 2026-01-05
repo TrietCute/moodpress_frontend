@@ -25,14 +25,6 @@ class RelaxViewModel @Inject constructor(
         fetchSounds()
     }
 
-    fun resetAllSoundsUI() {
-        val currentList = _sounds.value.toMutableList()
-        currentList.forEach {
-            it.isPlaying = false
-        }
-        _sounds.value = currentList
-    }
-
     private fun fetchSounds() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -45,5 +37,18 @@ class RelaxViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    fun updateSoundStates(activeUrls: Set<String>) {
+        val currentList = _sounds.value
+        val updatedList = currentList.map { sound ->
+            val isPlaying = activeUrls.contains(sound.audioUrl)
+            if (sound.isPlaying != isPlaying) {
+                sound.copy(isPlaying = isPlaying)
+            } else {
+                sound
+            }
+        }
+        _sounds.value = updatedList
     }
 }

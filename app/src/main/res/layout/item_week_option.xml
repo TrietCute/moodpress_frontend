@@ -8,7 +8,7 @@
     android:focusable="true">
 
     <TextView
-        android:id="@+id/tv_week_label"
+        android:id="@+id/tvWeekLabel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"
