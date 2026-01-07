@@ -19,6 +19,7 @@ class SessionManager @Inject constructor(
         const val PREFS_NAME = "mood_press_prefs"
         const val KEY_USER_ID = "USER_ID"
         const val KEY_USER_NAME = "USER_NAME"
+        const val KEY_USER_PICTURE = "USER_PICTURE"
         const val KEY_NOTIF_ENABLED = "NOTIF_ENABLED"
         const val KEY_NOTIF_HOUR = "NOTIF_HOUR"
         const val KEY_NOTIF_MINUTE = "NOTIF_MINUTE"
@@ -56,10 +57,21 @@ class SessionManager @Inject constructor(
         return sharedPrefs.getString(KEY_USER_NAME, null)
     }
 
+    fun saveUserPicture(pictureUrl: String?) {
+        sharedPrefs.edit {
+            putString(KEY_USER_PICTURE, pictureUrl)
+        }
+    }
+
+    fun fetchUserPicture(): String? {
+        return sharedPrefs.getString(KEY_USER_PICTURE, null)
+    }
+
     fun clearSession() {
         sharedPrefs.edit {
             remove(KEY_USER_ID)
-                .remove(KEY_USER_NAME)
+            remove(KEY_USER_NAME)
+            remove(KEY_USER_PICTURE)
         }
     }
 

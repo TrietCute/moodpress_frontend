@@ -58,7 +58,7 @@
     <fragment
         android:id="@+id/nav_analysis"
         android:name="com.example.moodpress.feature.stats.presentation.view.fragment.StatsFragment"
-        android:label="Phân tích"
+        android:label="Thống kê"
         tools:layout="@layout/fragment_stats" />
 
     <fragment

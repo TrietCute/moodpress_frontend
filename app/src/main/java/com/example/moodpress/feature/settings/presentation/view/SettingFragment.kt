@@ -2,6 +2,8 @@ package com.example.moodpress.feature.settings.presentation.view
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -17,6 +19,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
 import com.example.moodpress.R
 import com.example.moodpress.core.utils.GoogleAuthManager
 import com.example.moodpress.core.utils.NotificationScheduler
@@ -30,6 +34,9 @@ import com.google.android.material.timepicker.TimeFormat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.request.target.Target
+import androidx.core.graphics.toColorInt
 
 @AndroidEntryPoint
 class SettingsFragment : Fragment() {
@@ -78,6 +85,22 @@ class SettingsFragment : Fragment() {
     private fun setupUI() {
         val name = sessionManager.fetchUserName() ?: "Bạn"
         binding.textGreeting.text = "Xin chào, $name!"
+
+        val pictureUrl = sessionManager.fetchUserPicture()
+
+        if (!pictureUrl.isNullOrEmpty()) {
+            binding.userImg.clearColorFilter()
+
+            Glide.with(this)
+                .load(pictureUrl)
+                .circleCrop()
+                .placeholder(R.drawable.ic_person_outline)
+                .error(R.drawable.ic_person_outline)
+                .into(binding.userImg)
+        } else {
+            binding.userImg.setImageResource(R.drawable.ic_person_outline)
+            binding.userImg.setColorFilter("#757575".toColorInt())
+        }
     }
 
     private fun setupClickListeners() {
@@ -122,9 +145,16 @@ class SettingsFragment : Fragment() {
             is LinkAccountState.Success -> {
                 binding.buttonLinkAccount.isEnabled = true
                 showToast("Liên kết thành công! Dữ liệu của bạn đã an toàn.")
+                sessionManager.saveUserName(state.profile.name ?: "Bạn")
+                sessionManager.saveUserPicture(state.profile.picture)
+                android.util.Log.d("DEBUG_IMG", "Link ảnh lấy được: ${state.profile.picture}")
+                setupUI()
                 showGoogleInfo(state.profile)
             }
             is LinkAccountState.Linked -> {
+                sessionManager.saveUserPicture(state.profile.picture)
+                android.util.Log.d("DEBUG_IMG", "Link ảnh lấy được: ${state.profile.picture}")
+                setupUI()
                 showGoogleInfo(state.profile)
             }
             is LinkAccountState.Error -> {

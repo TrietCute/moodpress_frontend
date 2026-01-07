@@ -15,7 +15,7 @@ import javax.inject.Inject
 sealed class ProfileUiState {
     data object Loading : ProfileUiState()
     data class Loaded(val profile: UserProfile) : ProfileUiState()
-    data object Success : ProfileUiState() // Lưu thành công
+    data object Success : ProfileUiState()
     data class Error(val message: String) : ProfileUiState()
 }
 

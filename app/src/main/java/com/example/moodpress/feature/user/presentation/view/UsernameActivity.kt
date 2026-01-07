@@ -12,8 +12,10 @@ import com.example.moodpress.MainActivity
 import com.example.moodpress.databinding.ActivityUsernameBinding
 import com.example.moodpress.feature.user.presentation.viewmodel.UserUpdateState
 import com.example.moodpress.feature.user.presentation.viewmodel.UserViewModel
+import com.google.android.material.button.MaterialButton
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -82,9 +84,7 @@ class UsernameActivity : AppCompatActivity() {
             return
         }
 
-        // Lấy text từ RadioButton đã chọn thông qua ID
-        val gender = binding.root.findViewById<RadioButton>(checkedGenderId).text.toString()
-
+        val gender = binding.root.findViewById<MaterialButton>(checkedGenderId).text.toString()
         viewModel.saveProfile(name, gender, birth)
     }
 
@@ -94,9 +94,7 @@ class UsernameActivity : AppCompatActivity() {
                 binding.nextButton.isEnabled = state !is UserUpdateState.Loading
 
                 when (state) {
-                    is UserUpdateState.Loading -> {
-                        // Show loading indicator here if needed
-                    }
+                    is UserUpdateState.Loading -> {}
                     is UserUpdateState.Success -> {
                         showToast("Chào mừng, ${state.userName}!")
                         navigateToMain()

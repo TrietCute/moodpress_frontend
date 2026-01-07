@@ -131,6 +131,7 @@
                     app:strokeColor="@color/selector_gender_stroke_color"/>
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_female"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -140,6 +141,7 @@
                     app:strokeColor="@color/selector_gender_stroke_color"/>
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_other"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
